@@ -1,6 +1,8 @@
 package main
 
 import (
+	"io"
+	"os"
 	"testing"
 )
 
@@ -32,5 +34,29 @@ func Test_isPrime(t *testing.T) {
 				t.Errorf("isPrime(%d) = %s; want %s", tt.testNum, msg, tt.msg)
 			}
 		})
+	}
+}
+
+func Test_prompt(t *testing.T) {
+	// Redirect stdout to a pipe
+	oldOut := os.Stdout
+	// Create a pipe for stdout
+	r, w, _ := os.Pipe()
+	// set os.Stdout to the write end of the pipe
+	os.Stdout = w
+
+	prompt()
+
+	// Close the write end of the pipe
+	_ = w.Close()
+
+	// Reset os.Stdout to its original value
+	os.Stdout = oldOut
+
+	// Read the output from the read end of the pipe
+	out, _ := io.ReadAll(r)
+
+	if string(out) != "->\n" {
+		t.Errorf("prompt() = %s; want ->", out)
 	}
 }
