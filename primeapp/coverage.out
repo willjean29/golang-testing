@@ -1,6 +1,6 @@
 mode: set
 primeapp/main.go:10.13,29.2 6 0
-primeapp/main.go:31.14,36.2 4 0
+primeapp/main.go:31.14,36.2 4 1
 primeapp/main.go:38.15,40.2 1 1
 primeapp/main.go:42.40,44.6 2 0
 primeapp/main.go:44.6,47.11 2 0

@@ -60,3 +60,25 @@ func Test_prompt(t *testing.T) {
 		t.Errorf("prompt() = %s; want ->", out)
 	}
 }
+
+func Test_intro(t *testing.T) {
+	oldStdout := os.Stdout
+
+	r, w, _ := os.Pipe()
+
+	os.Stdout = w
+
+	intro()
+
+	_ = w.Close()
+
+	os.Stdout = oldStdout
+
+	out, _ := io.ReadAll(r)
+
+	expected := "Welcome to the prime number app!\nThis app will tell you if a number is prime or not.\nLet's get started!\n->\n"
+
+	if string(out) != expected {
+		t.Errorf("intro() = %s; want %s", out, expected)
+	}
+}
