@@ -6,11 +6,11 @@ primeapp/main.go:42.40,44.6 2 0
 primeapp/main.go:44.6,47.11 2 0
 primeapp/main.go:47.11,50.4 2 0
 primeapp/main.go:51.3,52.11 2 0
-primeapp/main.go:56.58,60.27 2 0
-primeapp/main.go:60.27,62.3 1 0
-primeapp/main.go:65.2,66.16 2 0
-primeapp/main.go:66.16,68.3 1 0
-primeapp/main.go:71.2,73.19 2 0
+primeapp/main.go:56.58,60.27 2 1
+primeapp/main.go:60.27,62.3 1 1
+primeapp/main.go:65.2,66.16 2 1
+primeapp/main.go:66.16,68.3 1 1
+primeapp/main.go:71.2,73.19 2 1
 primeapp/main.go:76.36,77.22 1 1
 primeapp/main.go:77.22,79.3 1 1
 primeapp/main.go:81.2,81.11 1 1

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"io"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -80,5 +82,29 @@ func Test_intro(t *testing.T) {
 
 	if string(out) != expected {
 		t.Errorf("intro() = %s; want %s", out, expected)
+	}
+}
+
+func Test_checkNumbers(t *testing.T) {
+	inputTests := []struct {
+		name     string
+		input    string
+		expected string
+		done     bool
+	}{
+		{"Quit", "q", "", true},
+		{"Not Prime", "15", "15 is not prime, because it is a factor of 3", false},
+		{"Prime", "7", "7 is a prime number!", false},
+		{"Not a Number", "a", "Please make a whole number!", false},
+	}
+	for _, tt := range inputTests {
+		t.Run(tt.name, func(t *testing.T) {
+			input := strings.NewReader(tt.input)
+			reader := bufio.NewScanner(input)
+			res, _ := checkNumbers(reader)
+			if res != tt.expected {
+				t.Errorf("checkNumbers() = %s; want %s", res, tt.expected)
+			}
+		})
 	}
 }
