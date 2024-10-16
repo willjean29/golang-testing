@@ -8,7 +8,12 @@ import (
 	"strconv"
 )
 
+// nolint: funlen
 func main() {
+	runApp(os.Stdin, os.Stdout)
+}
+
+func runApp(input io.Reader, output io.Writer) {
 	// print welcome message
 	intro()
 
@@ -16,7 +21,7 @@ func main() {
 	doneChan := make(chan bool)
 
 	// start the readUserInput goroutine
-	go readUserInput(os.Stdin, doneChan)
+	go readUserInput(input, doneChan)
 
 	// wait for the readUserInput goroutine to finish
 	<-doneChan
@@ -25,8 +30,7 @@ func main() {
 	close(doneChan)
 
 	// print goodbye message
-	fmt.Println("Goodbye!")
-
+	fmt.Fprintln(output, "Goodbye!")
 }
 
 func intro() {

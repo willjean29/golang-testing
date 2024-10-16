@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">primeapp/main.go (82.9%)</option>
+				<option value="file0">primeapp/main.go (97.2%)</option>
 				
 				</select>
 			</div>
@@ -79,7 +79,12 @@ import (
         "strconv"
 )
 
+// nolint: funlen
 func main() <span class="cov0" title="0">{
+        runApp(os.Stdin, os.Stdout)
+}</span>
+
+func runApp(input io.Reader, output io.Writer) <span class="cov8" title="1">{
         // print welcome message
         intro()
 
@@ -87,7 +92,7 @@ func main() <span class="cov0" title="0">{
         doneChan := make(chan bool)
 
         // start the readUserInput goroutine
-        go readUserInput(os.Stdin, doneChan)
+        go readUserInput(input, doneChan)
 
         // wait for the readUserInput goroutine to finish
         &lt;-doneChan
@@ -96,8 +101,7 @@ func main() <span class="cov0" title="0">{
         close(doneChan)
 
         // print goodbye message
-        fmt.Println("Goodbye!")
-
+        fmt.Fprintln(output, "Goodbye!")
 }</span>
 
 func intro() <span class="cov8" title="1">{

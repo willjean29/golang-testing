@@ -119,3 +119,27 @@ func Test_readUserInput(t *testing.T) {
 	<-doneChan
 	close(doneChan)
 }
+
+func Test_runApp(t *testing.T) {
+	input := "7\nq\n"
+	var stdin bytes.Buffer
+	stdin.Write([]byte(input))
+
+	oldStdout := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	runApp(&stdin, w)
+
+	os.Stdout = oldStdout
+	_ = w.Close()
+
+	out, _ := io.ReadAll(r)
+
+	expected := "Welcome to the prime number app!\nThis app will tell you if a number is prime or not.\nLet's get started!\n->\n7 is a prime number!\n->\nGoodbye!\n"
+
+	if string(out) != expected {
+		t.Errorf("runApp() = %s; want %s", out, expected)
+	}
+
+}
