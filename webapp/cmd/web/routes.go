@@ -12,5 +12,6 @@ func (app *application) routes() http.Handler {
 
 	router.Use(middleware.Recoverer)
 
+	router.Get("/", app.Home)
 	return router
 }
