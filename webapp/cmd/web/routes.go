@@ -12,7 +12,9 @@ func (app *application) routes() http.Handler {
 
 	router.Use(middleware.Recoverer)
 	router.Use(app.addIPToContext)
+
 	router.Get("/", app.Home)
+	router.Post("/login", app.Login)
 
 	fs := http.FileServer(http.Dir("./static/"))
 	router.Handle("/static/*", http.StripPrefix("/static", fs))

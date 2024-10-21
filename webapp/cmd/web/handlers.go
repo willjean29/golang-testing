@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"path"
 )
@@ -17,6 +19,22 @@ func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 	_ = app.render(w, r, "home.page.html", &TemplateData{
 		IP: app.ipFromContext(r.Context()),
 	})
+}
+
+func (app *application) Login(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		return
+	}
+
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+
+	log.Println(email, password)
+
+	fmt.Fprintln(w, "Email:", email)
 }
 
 func (app *application) render(w http.ResponseWriter, _ *http.Request, t string, data *TemplateData) error {
