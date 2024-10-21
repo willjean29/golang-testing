@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -50,5 +51,17 @@ func Test_application_addIPToContext(t *testing.T) {
 		}
 
 		handlerTest.ServeHTTP(httptest.NewRecorder(), req)
+	}
+}
+
+func Test_application_ipFromContext(t *testing.T) {
+	var app application
+	const mockIP = "192.3.2.1"
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, contentUserKey, mockIP)
+	ip := app.ipFromContext(ctx)
+
+	if ip != mockIP {
+		t.Errorf("expected %s, got %s", mockIP, ip)
 	}
 }
