@@ -59,7 +59,7 @@
 				
 				<option value="file1">webapp/cmd/web/main.go (0.0%)</option>
 				
-				<option value="file2">webapp/cmd/web/middlewares.go (95.7%)</option>
+				<option value="file2">webapp/cmd/web/middlewares.go (100.0%)</option>
 				
 				<option value="file3">webapp/cmd/web/routes.go (100.0%)</option>
 				
@@ -173,6 +173,7 @@ func (app *application) addIPToContext(next http.Handler) http.Handler <span cla
 
 func getIP(r *http.Request) (string, error) <span class="cov8" title="1">{
         ip, _, err := net.SplitHostPort(r.RemoteAddr)
+
         if err != nil </span><span class="cov8" title="1">{
                 return "unknown", err
         }</span>
@@ -185,10 +186,6 @@ func getIP(r *http.Request) (string, error) <span class="cov8" title="1">{
         <span class="cov8" title="1">forward := r.Header.Get("X-Forwarded-For")
         if len(forward) &gt; 0 </span><span class="cov8" title="1">{
                 ip = forward
-        }</span>
-
-        <span class="cov8" title="1">if len(ip) == 0 </span><span class="cov0" title="0">{
-                ip = "forward"
         }</span>
 
         <span class="cov8" title="1">return ip, nil</span>
