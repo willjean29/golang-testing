@@ -6,7 +6,11 @@ import (
 	"testing"
 )
 
+func setup() {
+	pathTemplate = "./../../templates/"
+}
 func Test_application_handlers(t *testing.T) {
+	setup()
 	var testRoutes = []struct {
 		name               string
 		url                string
@@ -23,7 +27,7 @@ func Test_application_handlers(t *testing.T) {
 
 	ts := httptest.NewTLSServer(router)
 	defer ts.Close()
-	pathTemplate = "./../../templates/"
+
 	for _, tr := range testRoutes {
 		resp, err := ts.Client().Get(ts.URL + tr.url)
 		if err != nil {
@@ -38,6 +42,7 @@ func Test_application_handlers(t *testing.T) {
 }
 
 func Test_application_render(t *testing.T) {
+	setup()
 	var app application
 	app = application{}
 
@@ -69,5 +74,6 @@ func Test_application_render(t *testing.T) {
 				t.Errorf("%s: expected status code %d, got %d", tt.name, http.StatusOK, res.Code)
 			}
 		}
+
 	}
 }

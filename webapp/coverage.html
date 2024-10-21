@@ -59,7 +59,9 @@
 				
 				<option value="file1">webapp/cmd/web/main.go (0.0%)</option>
 				
-				<option value="file2">webapp/cmd/web/routes.go (100.0%)</option>
+				<option value="file2">webapp/cmd/web/middlewares.go (95.7%)</option>
+				
+				<option value="file3">webapp/cmd/web/routes.go (100.0%)</option>
 				
 				</select>
 			</div>
@@ -89,7 +91,9 @@ type TemplateData struct {
 }
 
 func (app *application) Home(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        _ = app.render(w, r, "home.page.html", &amp;TemplateData{})
+        _ = app.render(w, r, "home.page.html", &amp;TemplateData{
+                IP: app.ipFromContext(r.Context()),
+        })
 }</span>
 
 func (app *application) render(w http.ResponseWriter, _ *http.Request, t string, data *TemplateData) error <span class="cov8" title="1">{
@@ -125,7 +129,7 @@ func main() <span class="cov0" title="0">{
 
         fmt.Println("Starting server on :8080")
 
-        err := http.ListenAndServe(":8080", router)
+        err := http.ListenAndServe("localhost:8080", router)
 
         if err != nil </span><span class="cov0" title="0">{
                 log.Fatal("Error starting server: " + err.Error())
@@ -134,6 +138,64 @@ func main() <span class="cov0" title="0">{
 </pre>
 		
 		<pre class="file" id="file2" style="display: none">package main
+
+import (
+        "context"
+        "fmt"
+        "net"
+        "net/http"
+)
+
+type contentKey string
+
+const contentUserKey contentKey = "user_ip"
+
+func (app *application) ipFromContext(ctx context.Context) string <span class="cov8" title="1">{
+        return ctx.Value(contentUserKey).(string)
+}</span>
+
+func (app *application) addIPToContext(next http.Handler) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                var ctx = context.Background()
+                ip, err := getIP(r)
+                if err != nil </span><span class="cov8" title="1">{
+                        ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+                        if len(ip) == 0 </span><span class="cov8" title="1">{
+                                ip = "unknown"
+                        }</span>
+                        <span class="cov8" title="1">ctx = context.WithValue(r.Context(), contentUserKey, ip)</span>
+                } else<span class="cov8" title="1"> {
+                        ctx = context.WithValue(r.Context(), contentUserKey, ip)
+                }</span>
+                <span class="cov8" title="1">next.ServeHTTP(w, r.WithContext(ctx))</span>
+        })
+}
+
+func getIP(r *http.Request) (string, error) <span class="cov8" title="1">{
+        ip, _, err := net.SplitHostPort(r.RemoteAddr)
+        if err != nil </span><span class="cov8" title="1">{
+                return "unknown", err
+        }</span>
+
+        <span class="cov8" title="1">userIp := net.ParseIP(ip)
+        if userIp == nil </span><span class="cov8" title="1">{
+                return "", fmt.Errorf("userip: %q is not IP:port", r.RemoteAddr)
+        }</span>
+
+        <span class="cov8" title="1">forward := r.Header.Get("X-Forwarded-For")
+        if len(forward) &gt; 0 </span><span class="cov8" title="1">{
+                ip = forward
+        }</span>
+
+        <span class="cov8" title="1">if len(ip) == 0 </span><span class="cov0" title="0">{
+                ip = "forward"
+        }</span>
+
+        <span class="cov8" title="1">return ip, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package main
 
 import (
         "net/http"
@@ -146,7 +208,7 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
         router := chi.NewRouter()
 
         router.Use(middleware.Recoverer)
-
+        router.Use(app.addIPToContext)
         router.Get("/", app.Home)
 
         fs := http.FileServer(http.Dir("./static/"))
