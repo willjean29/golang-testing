@@ -57,7 +57,7 @@
 				
 				<option value="file0">webapp/cmd/web/forms.go (100.0%)</option>
 				
-				<option value="file1">webapp/cmd/web/handlers.go (43.5%)</option>
+				<option value="file1">webapp/cmd/web/handlers.go (100.0%)</option>
 				
 				<option value="file2">webapp/cmd/web/main.go (0.0%)</option>
 				
@@ -161,23 +161,23 @@ func (app *application) Home(w http.ResponseWriter, r *http.Request) <span class
         })
 }</span>
 
-func (app *application) Login(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+func (app *application) Login(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         err := r.ParseForm()
 
-        if err != nil </span><span class="cov0" title="0">{
+        if err != nil </span><span class="cov8" title="1">{
                 http.Error(w, "Bad Request", http.StatusBadRequest)
                 return
         }</span>
 
-        <span class="cov0" title="0">form := NewForm(r.PostForm)
+        <span class="cov8" title="1">form := NewForm(r.PostForm)
         form.Required("email", "password")
 
-        if !form.Valid() </span><span class="cov0" title="0">{
+        if !form.Valid() </span><span class="cov8" title="1">{
                 fmt.Fprintln(w, "Form is not valid")
                 return
         }</span>
 
-        <span class="cov0" title="0">email := r.Form.Get("email")
+        <span class="cov8" title="1">email := r.Form.Get("email")
         password := r.Form.Get("password")
 
         log.Println(email, password)

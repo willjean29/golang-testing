@@ -1,14 +1,18 @@
 package main
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strings"
 	"testing"
 )
 
 func setup() {
 	pathTemplate = "./../../templates/"
 }
+
 func Test_application_handlers(t *testing.T) {
 	setup()
 	var testRoutes = []struct {
@@ -75,5 +79,40 @@ func Test_application_render(t *testing.T) {
 			}
 		}
 
+	}
+}
+
+func Test_application_login(t *testing.T) {
+	tests := []struct {
+		name           string
+		body           io.Reader
+		expected       string
+		expectedStatus int
+	}{
+		{"valid form", strings.NewReader(url.Values{"email": {"jean@gmail"}, "password": {"123456"}}.Encode()), "Email: jean@gmail", http.StatusOK},
+		{"invalid form", strings.NewReader(url.Values{"email": {"jean@gmail"}}.Encode()), "Form is not valid", http.StatusOK},
+		{"invalid body", strings.NewReader("%"), "Bad Request", http.StatusBadRequest},
+	}
+
+	var app application
+	app = application{}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", "/login", tt.body)
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+			res := httptest.NewRecorder()
+
+			app.Login(res, req)
+
+			if res.Code != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, res.Code)
+			}
+
+			if strings.TrimSpace(res.Body.String()) != strings.TrimSpace(tt.expected) {
+				t.Errorf("expected %q, got %q", tt.expected, res.Body.String())
+			}
+		})
 	}
 }
