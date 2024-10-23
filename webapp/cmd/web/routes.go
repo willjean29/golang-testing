@@ -12,6 +12,7 @@ func (app *application) routes() http.Handler {
 
 	router.Use(middleware.Recoverer)
 	router.Use(app.addIPToContext)
+	router.Use(app.Session.LoadAndSave)
 
 	router.Get("/", app.Home)
 	router.Post("/login", app.Login)
