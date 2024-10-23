@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -77,6 +78,40 @@ func Test_application_render(t *testing.T) {
 	}
 }
 
+func Test_application_home(t *testing.T) {
+	setup()
+	tests := []struct {
+		name         string
+		contentKey   string
+		contentValue string
+		statusCode   int
+		expected     string
+	}{
+		{"exist session", "test", "jean@gmail", http.StatusOK, "From session: jean@gmail"},
+		{"no exist session", "", "unknown", http.StatusOK, "From session:"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/", nil)
+			req = addContextAndSessionToRequest(req)
+			app.Session.Put(req.Context(), tt.contentKey, tt.contentValue)
+			res := httptest.NewRecorder()
+
+			app.Home(res, req)
+
+			if res.Code != tt.statusCode {
+				t.Errorf("expected status %d, got %d", tt.statusCode, res.Code)
+			}
+
+			if !strings.Contains(res.Body.String(), tt.expected) {
+				t.Errorf("expected %q, got %q", tt.expected, res.Body.String())
+			}
+		})
+	}
+
+}
+
 func Test_application_login(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -107,4 +142,16 @@ func Test_application_login(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getCtx() context.Context {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, contentUserKey, "unknown")
+	return ctx
+}
+
+func addContextAndSessionToRequest(req *http.Request) *http.Request {
+	req = req.WithContext(getCtx())
+	session, _ := app.Session.Load(req.Context(), req.Header.Get("X-Session"))
+	return req.WithContext(session)
 }

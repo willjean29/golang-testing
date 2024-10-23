@@ -65,6 +65,8 @@
 				
 				<option value="file4">webapp/cmd/web/routes.go (100.0%)</option>
 				
+				<option value="file5">webapp/cmd/web/sessions.go (100.0%)</option>
+				
 				</select>
 			</div>
 			<div id="legend">
@@ -146,6 +148,7 @@ import (
         "log"
         "net/http"
         "path"
+        "time"
 )
 
 var pathTemplate = "./templates/"
@@ -156,10 +159,18 @@ type TemplateData struct {
 }
 
 func (app *application) Home(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
-        _ = app.render(w, r, "home.page.html", &amp;TemplateData{
-                IP: app.ipFromContext(r.Context()),
-        })
-}</span>
+        var td = make(map[string]any)
+        if app.Session.Exists(r.Context(), "test") </span><span class="cov8" title="1">{
+                msg := app.Session.GetString(r.Context(), "test")
+                td["test"] = msg
+        }</span> else<span class="cov8" title="1"> {
+                app.Session.Put(r.Context(), "test", "Hit this page at "+time.Now().UTC().String())
+        }</span>
+        <span class="cov8" title="1">_ = app.render(w, r, "home.page.html", &amp;TemplateData{
+                IP:   app.ipFromContext(r.Context()),
+                Data: td,
+        })</span>
+}
 
 func (app *application) Login(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         err := r.ParseForm()
@@ -206,19 +217,22 @@ import (
         "fmt"
         "log"
         "net/http"
+
+        "github.com/alexedwards/scs/v2"
 )
 
 type application struct {
+        Session *scs.SessionManager
 }
 
 func main() <span class="cov0" title="0">{
         app := &amp;application{}
 
-        router := app.routes()
+        app.Session = getSession()
 
         fmt.Println("Starting server on :8080")
 
-        err := http.ListenAndServe("localhost:8080", router)
+        err := http.ListenAndServe("localhost:8080", app.routes())
 
         if err != nil </span><span class="cov0" title="0">{
                 log.Fatal("Error starting server: " + err.Error())
@@ -295,6 +309,7 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
 
         router.Use(middleware.Recoverer)
         router.Use(app.addIPToContext)
+        router.Use(app.Session.LoadAndSave)
 
         router.Get("/", app.Home)
         router.Post("/login", app.Login)
@@ -303,6 +318,25 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
         router.Handle("/static/*", http.StripPrefix("/static", fs))
 
         return router
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package main
+
+import (
+        "net/http"
+        "time"
+
+        "github.com/alexedwards/scs/v2"
+)
+
+func getSession() *scs.SessionManager <span class="cov8" title="1">{
+        session := scs.New()
+        session.Lifetime = 24 * time.Hour
+        session.Cookie.Persist = true
+        session.Cookie.SameSite = http.SameSiteLaxMode
+        session.Cookie.Secure = true
+        return session
 }</span>
 </pre>
 		
