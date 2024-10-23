@@ -18,8 +18,6 @@ func Test_application_routes(t *testing.T) {
 		{"/static/*", "GET"},
 	}
 
-	var app application
-
 	app = application{}
 
 	router := app.routes()

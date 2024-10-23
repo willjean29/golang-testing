@@ -24,9 +24,6 @@ func Test_application_handlers(t *testing.T) {
 		{"404", "/finish", http.StatusNotFound},
 	}
 
-	var app application
-	app = application{}
-
 	router := app.routes()
 
 	ts := httptest.NewTLSServer(router)
@@ -47,8 +44,6 @@ func Test_application_handlers(t *testing.T) {
 
 func Test_application_render(t *testing.T) {
 	setup()
-	var app application
-	app = application{}
 
 	tests := []struct {
 		name          string
@@ -93,9 +88,6 @@ func Test_application_login(t *testing.T) {
 		{"invalid form", strings.NewReader(url.Values{"email": {"jean@gmail"}}.Encode()), "Form is not valid", http.StatusOK},
 		{"invalid body", strings.NewReader("%"), "Bad Request", http.StatusBadRequest},
 	}
-
-	var app application
-	app = application{}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

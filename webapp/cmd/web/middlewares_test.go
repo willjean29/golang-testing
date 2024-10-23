@@ -20,8 +20,6 @@ func Test_application_addIPToContext(t *testing.T) {
 		{"", "", "hello:word", false},
 	}
 
-	var app application
-
 	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		val := r.Context().Value(contentUserKey)
 		if val == nil {
@@ -55,7 +53,6 @@ func Test_application_addIPToContext(t *testing.T) {
 }
 
 func Test_application_ipFromContext(t *testing.T) {
-	var app application
 	const mockIP = "192.3.2.1"
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, contentUserKey, mockIP)
