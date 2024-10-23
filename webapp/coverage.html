@@ -186,7 +186,7 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) <span clas
 }
 
 func (app *application) render(w http.ResponseWriter, _ *http.Request, t string, data *TemplateData) error <span class="cov8" title="1">{
-        templParsed, err := template.ParseFiles(path.Join(pathTemplate, t))
+        templParsed, err := template.ParseFiles(path.Join(pathTemplate, t), path.Join(pathTemplate, "layout.page.html"))
         if err != nil </span><span class="cov8" title="1">{
                 http.Error(w, "Bad Request", http.StatusBadRequest)
                 return err

@@ -46,7 +46,7 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) render(w http.ResponseWriter, _ *http.Request, t string, data *TemplateData) error {
-	templParsed, err := template.ParseFiles(path.Join(pathTemplate, t))
+	templParsed, err := template.ParseFiles(path.Join(pathTemplate, t), path.Join(pathTemplate, "layout.page.html"))
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return err
