@@ -1,10 +1,10 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"log"
 	"net/http"
+	"webapp/pkg/db"
 
 	"github.com/alexedwards/scs/v2"
 )
@@ -12,7 +12,7 @@ import (
 type application struct {
 	Session *scs.SessionManager
 	DSN     string
-	DB      *sql.DB
+	DB      db.PostgresConn
 }
 
 func main() {
@@ -27,7 +27,7 @@ func main() {
 		log.Fatal("Error connecting to database: " + err.Error())
 	}
 
-	app.DB = conn
+	app.DB = db.PostgresConn{DB: conn}
 
 	app.Session = getSession()
 
