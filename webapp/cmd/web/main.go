@@ -27,6 +27,8 @@ func main() {
 		log.Fatal("Error connecting to database: " + err.Error())
 	}
 
+	defer conn.Close()
+
 	app.DB = db.PostgresConn{DB: conn}
 
 	app.Session = getSession()
