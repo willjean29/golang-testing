@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"testing"
-	"webapp/pkg/db"
+	"webapp/pkg/repository/datasource"
 )
 
 var app application
@@ -19,6 +19,6 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatal("Error connecting to database: " + err.Error())
 	}
-	app.DB = db.PostgresConn{DB: conn}
+	app.DB = &datasource.PostgresDB{DB: conn}
 	os.Exit(m.Run())
 }
