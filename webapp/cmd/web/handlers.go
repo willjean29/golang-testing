@@ -6,13 +6,17 @@ import (
 	"net/http"
 	"path"
 	"time"
+	"webapp/pkg/data"
 )
 
 var pathTemplate = "./templates/"
 
 type TemplateData struct {
-	IP   string
-	Data map[string]any
+	IP    string
+	Data  map[string]any
+	Error string
+	Flash string
+	User  data.User
 }
 
 func (app *application) Home(w http.ResponseWriter, r *http.Request) {
@@ -24,15 +28,12 @@ func (app *application) Home(w http.ResponseWriter, r *http.Request) {
 		app.Session.Put(r.Context(), "test", "Hit this page at "+time.Now().UTC().String())
 	}
 	_ = app.render(w, r, "home.page.html", &TemplateData{
-		IP:   app.ipFromContext(r.Context()),
 		Data: td,
 	})
 }
 
 func (app *application) Profile(w http.ResponseWriter, r *http.Request) {
-	_ = app.render(w, r, "profile.page.html", &TemplateData{
-		IP: app.ipFromContext(r.Context()),
-	})
+	_ = app.render(w, r, "profile.page.html", &TemplateData{})
 }
 
 func (app *application) Login(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +49,7 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 
 	if !form.Valid() {
 		app.Session.Put(r.Context(), "error", "Invalid login credentials")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -59,7 +60,7 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		app.Session.Put(r.Context(), "error", "Invalid login!")
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -71,13 +72,18 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/user/profile", http.StatusSeeOther)
 }
 
-func (app *application) render(w http.ResponseWriter, _ *http.Request, t string, data *TemplateData) error {
+func (app *application) render(w http.ResponseWriter, r *http.Request, t string, td *TemplateData) error {
 	templParsed, err := template.ParseFiles(path.Join(pathTemplate, t), path.Join(pathTemplate, "layout.page.html"))
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return err
 	}
-	err = templParsed.Execute(w, data)
+
+	td.IP = app.ipFromContext(r.Context())
+	td.Error = app.Session.PopString(r.Context(), "error")
+	td.Flash = app.Session.PopString(r.Context(), "flash")
+
+	err = templParsed.Execute(w, td)
 	if err != nil {
 		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return err
