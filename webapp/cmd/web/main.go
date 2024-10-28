@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/gob"
 	"flag"
 	"log"
 	"net/http"
+	"webapp/pkg/data"
 	"webapp/pkg/db"
 
 	"github.com/alexedwards/scs/v2"
@@ -16,6 +18,7 @@ type application struct {
 }
 
 func main() {
+	gob.Register(data.User{})
 	app := &application{}
 
 	flag.StringVar(&app.DSN, "dsn", "host=localhost port=5432 user=postgres password=postgres dbname=users ", "Postgres connection")

@@ -2,7 +2,6 @@ package main
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"path"
 	"time"
@@ -64,7 +63,11 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(password, user.FirstName)
+	if !app.authenticate(r, user, password) {
+		app.Session.Put(r.Context(), "error", "Invalid login!")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
 	_ = app.Session.RenewToken(r.Context())
 
@@ -89,4 +92,12 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, t string,
 		return err
 	}
 	return nil
+}
+
+func (app *application) authenticate(r *http.Request, user *data.User, password string) bool {
+	if valid, err := user.PasswordMatches(password); err != nil || !valid {
+		return false
+	}
+	app.Session.Put(r.Context(), "user_id", user.ID)
+	return true
 }
