@@ -2,11 +2,12 @@ package datasource
 
 import (
 	"database/sql"
+	"errors"
 	"webapp/pkg/data"
 )
 
 type TestDB struct {
-	users []*data.User
+	Users []*data.User
 }
 
 func (m *TestDB) Connection() *sql.DB {
@@ -15,22 +16,35 @@ func (m *TestDB) Connection() *sql.DB {
 
 // AllUsers returns all users as a slice of *data.User
 func (m *TestDB) AllUsers() ([]*data.User, error) {
-	var users []*data.User
-	return users, nil
+	return m.Users, nil
 }
 
 // GetUser returns one user by id
 func (m *TestDB) GetUser(id int) (*data.User, error) {
-	var user data.User
-
-	return &user, nil
+	var user *data.User
+	for _, u := range m.Users {
+		if u.ID == id {
+			user = u
+		}
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+	return user, nil
 }
 
 // GetUserByEmail returns one user by email address
 func (m *TestDB) GetUserByEmail(email string) (*data.User, error) {
-	var user data.User
-
-	return &user, nil
+	var user *data.User
+	for _, u := range m.Users {
+		if u.Email == email {
+			user = u
+		}
+	}
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
+	return user, nil
 }
 
 // UpdateUser updates one user in the database

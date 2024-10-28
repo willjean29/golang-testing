@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">webapp/cmd/web/db.go (75.0%)</option>
+				<option value="file0">webapp/cmd/web/db.go (0.0%)</option>
 				
 				<option value="file1">webapp/cmd/web/forms.go (100.0%)</option>
 				
@@ -71,7 +71,11 @@
 				
 				<option value="file7">webapp/pkg/data/users.go (83.3%)</option>
 				
-				<option value="file8">webapp/pkg/db/users_postgres.go (11.7%)</option>
+				<option value="file8">webapp/pkg/db/users_postgres.go (0.0%)</option>
+				
+				<option value="file9">webapp/pkg/repository/datasource/users-testdb.go (33.3%)</option>
+				
+				<option value="file10">webapp/pkg/repository/datasource/users_postgres.go (0.0%)</option>
 				
 				</select>
 			</div>
@@ -96,24 +100,24 @@ import (
         _ "github.com/jackc/pgx/v4/stdlib"
 )
 
-func openDB(dsn string) (*sql.DB, error) <span class="cov8" title="1">{
+func openDB(dsn string) (*sql.DB, error) <span class="cov0" title="0">{
         db, err := sql.Open("pgx", dsn)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov8" title="1">err = db.Ping()
+        <span class="cov0" title="0">err = db.Ping()
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov8" title="1">return db, nil</span>
+        <span class="cov0" title="0">return db, nil</span>
 }
 
-func (app *application) connectToDB() (*sql.DB, error) <span class="cov8" title="1">{
+func (app *application) connectToDB() (*sql.DB, error) <span class="cov0" title="0">{
         connection, err := openDB(app.DSN)
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov8" title="1">log.Println("Connected to database")
+        <span class="cov0" title="0">log.Println("Connected to database")
         return connection, nil</span>
 }
 </pre>
@@ -292,7 +296,8 @@ import (
         "log"
         "net/http"
         "webapp/pkg/data"
-        "webapp/pkg/db"
+        "webapp/pkg/repository"
+        "webapp/pkg/repository/datasource"
 
         "github.com/alexedwards/scs/v2"
 )
@@ -300,7 +305,7 @@ import (
 type application struct {
         Session *scs.SessionManager
         DSN     string
-        DB      db.PostgresConn
+        DB      repository.Repository
 }
 
 func main() <span class="cov0" title="0">{
@@ -318,7 +323,7 @@ func main() <span class="cov0" title="0">{
 
         <span class="cov0" title="0">defer conn.Close()
 
-        app.DB = db.PostgresConn{DB: conn}
+        app.DB = &amp;datasource.PostgresDB{DB: conn}
 
         app.Session = getSession()
 
@@ -578,7 +583,7 @@ func (m *PostgresConn) GetUser(id int) (*data.User, error) <span class="cov0" ti
 }
 
 // GetUserByEmail returns one user by email address
-func (m *PostgresConn) GetUserByEmail(email string) (*data.User, error) <span class="cov8" title="1">{
+func (m *PostgresConn) GetUserByEmail(email string) (*data.User, error) <span class="cov0" title="0">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
@@ -604,11 +609,11 @@ func (m *PostgresConn) GetUserByEmail(email string) (*data.User, error) <span cl
                 &amp;user.UpdatedAt,
         )
 
-        if err != nil </span><span class="cov8" title="1">{
+        if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
 
-        <span class="cov8" title="1">return &amp;user, nil</span>
+        <span class="cov0" title="0">return &amp;user, nil</span>
 }
 
 // UpdateUser updates one user in the database
@@ -708,6 +713,334 @@ func (m *PostgresConn) ResetPassword(id int, password string) error <span class=
 
 // InsertUserImage inserts a user profile image into the database.
 func (m *PostgresConn) InsertUserImage(i data.UserImage) (int, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        var newID int
+        stmt := `insert into user_images (user_id, fileName, created_at, updated_at)
+                values ($1, $2, $3, $4) returning id`
+
+        err := m.DB.QueryRowContext(ctx, stmt,
+                i.UserID,
+                i.FileName,
+                time.Now(),
+                time.Now(),
+        ).Scan(&amp;newID)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov0" title="0">return newID, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package datasource
+
+import (
+        "database/sql"
+        "errors"
+        "webapp/pkg/data"
+)
+
+type TestDB struct {
+        Users []*data.User
+}
+
+func (m *TestDB) Connection() *sql.DB <span class="cov0" title="0">{
+        return nil
+}</span>
+
+// AllUsers returns all users as a slice of *data.User
+func (m *TestDB) AllUsers() ([]*data.User, error) <span class="cov0" title="0">{
+        return m.Users, nil
+}</span>
+
+// GetUser returns one user by id
+func (m *TestDB) GetUser(id int) (*data.User, error) <span class="cov0" title="0">{
+        var user *data.User
+        for _, u := range m.Users </span><span class="cov0" title="0">{
+                if u.ID == id </span><span class="cov0" title="0">{
+                        user = u
+                }</span>
+        }
+        <span class="cov0" title="0">if user == nil </span><span class="cov0" title="0">{
+                return nil, errors.New("user not found")
+        }</span>
+        <span class="cov0" title="0">return user, nil</span>
+}
+
+// GetUserByEmail returns one user by email address
+func (m *TestDB) GetUserByEmail(email string) (*data.User, error) <span class="cov8" title="1">{
+        var user *data.User
+        for _, u := range m.Users </span><span class="cov8" title="1">{
+                if u.Email == email </span><span class="cov8" title="1">{
+                        user = u
+                }</span>
+        }
+        <span class="cov8" title="1">if user == nil </span><span class="cov8" title="1">{
+                return nil, errors.New("user not found")
+        }</span>
+        <span class="cov8" title="1">return user, nil</span>
+}
+
+// UpdateUser updates one user in the database
+func (m *TestDB) UpdateUser(u data.User) error <span class="cov0" title="0">{
+
+        return nil
+}</span>
+
+// DeleteUser deletes one user from the database, by id
+func (m *TestDB) DeleteUser(id int) error <span class="cov0" title="0">{
+
+        return nil
+}</span>
+
+// InsertUser inserts a new user into the database, and returns the ID of the newly inserted row
+func (m *TestDB) InsertUser(user data.User) (int, error) <span class="cov0" title="0">{
+
+        return 1, nil
+}</span>
+
+// ResetPassword is the method we will use to change a user's password.
+func (m *TestDB) ResetPassword(id int, password string) error <span class="cov0" title="0">{
+
+        return nil
+}</span>
+
+// InsertUserImage inserts a user profile image into the database.
+func (m *TestDB) InsertUserImage(i data.UserImage) (int, error) <span class="cov0" title="0">{
+
+        return 1, nil
+}</span>
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package datasource
+
+import (
+        "context"
+        "database/sql"
+        "log"
+        "time"
+        "webapp/pkg/data"
+
+        "golang.org/x/crypto/bcrypt"
+)
+
+const dbTimeout = time.Second * 3
+
+type PostgresDB struct {
+        DB *sql.DB
+}
+
+func (m *PostgresDB) Connection() *sql.DB <span class="cov0" title="0">{
+        return m.DB
+}</span>
+
+// AllUsers returns all users as a slice of *data.User
+func (m *PostgresDB) AllUsers() ([]*data.User, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        query := `select id, email, first_name, last_name, password, is_admin, created_at, updated_at
+        from users order by last_name`
+
+        rows, err := m.DB.QueryContext(ctx, query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+
+        var users []*data.User
+
+        for rows.Next() </span><span class="cov0" title="0">{
+                var user data.User
+                err := rows.Scan(
+                        &amp;user.ID,
+                        &amp;user.Email,
+                        &amp;user.FirstName,
+                        &amp;user.LastName,
+                        &amp;user.Password,
+                        &amp;user.IsAdmin,
+                        &amp;user.CreatedAt,
+                        &amp;user.UpdatedAt,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error scanning", err)
+                        return nil, err
+                }</span>
+
+                <span class="cov0" title="0">users = append(users, &amp;user)</span>
+        }
+
+        <span class="cov0" title="0">return users, nil</span>
+}
+
+// GetUser returns one user by id
+func (m *PostgresDB) GetUser(id int) (*data.User, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        query := `
+                select 
+                        id, email, first_name, last_name, password, is_admin, created_at, updated_at 
+                from 
+                        users 
+                where 
+                    id = $1`
+
+        var user data.User
+        row := m.DB.QueryRowContext(ctx, query, id)
+
+        err := row.Scan(
+                &amp;user.ID,
+                &amp;user.Email,
+                &amp;user.FirstName,
+                &amp;user.LastName,
+                &amp;user.Password,
+                &amp;user.IsAdmin,
+                &amp;user.CreatedAt,
+                &amp;user.UpdatedAt,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// GetUserByEmail returns one user by email address
+func (m *PostgresDB) GetUserByEmail(email string) (*data.User, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        query := `
+                select 
+                        id, email, first_name, last_name, password, is_admin, created_at, updated_at 
+                from 
+                        users 
+                where 
+                    email = $1`
+
+        var user data.User
+        row := m.DB.QueryRowContext(ctx, query, email)
+
+        err := row.Scan(
+                &amp;user.ID,
+                &amp;user.Email,
+                &amp;user.FirstName,
+                &amp;user.LastName,
+                &amp;user.Password,
+                &amp;user.IsAdmin,
+                &amp;user.CreatedAt,
+                &amp;user.UpdatedAt,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// UpdateUser updates one user in the database
+func (m *PostgresDB) UpdateUser(u data.User) error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        stmt := `update users set
+                email = $1,
+                first_name = $2,
+                last_name = $3,
+                is_admin = $4,
+                updated_at = $5
+                where id = $6
+        `
+
+        _, err := m.DB.ExecContext(ctx, stmt,
+                u.Email,
+                u.FirstName,
+                u.LastName,
+                u.IsAdmin,
+                time.Now(),
+                u.ID,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteUser deletes one user from the database, by id
+func (m *PostgresDB) DeleteUser(id int) error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        stmt := `delete from users where id = $1`
+
+        _, err := m.DB.ExecContext(ctx, stmt, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// InsertUser inserts a new user into the database, and returns the ID of the newly inserted row
+func (m *PostgresDB) InsertUser(user data.User) (int, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov0" title="0">var newID int
+        stmt := `insert into users (email, first_name, last_name, password, is_admin, created_at, updated_at)
+                values ($1, $2, $3, $4, $5, $6, $7) returning id`
+
+        err = m.DB.QueryRowContext(ctx, stmt,
+                user.Email,
+                user.FirstName,
+                user.LastName,
+                hashedPassword,
+                user.IsAdmin,
+                time.Now(),
+                time.Now(),
+        ).Scan(&amp;newID)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov0" title="0">return newID, nil</span>
+}
+
+// ResetPassword is the method we will use to change a user's password.
+func (m *PostgresDB) ResetPassword(id int, password string) error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">stmt := `update users set password = $1 where id = $2`
+        _, err = m.DB.ExecContext(ctx, stmt, hashedPassword, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// InsertUserImage inserts a user profile image into the database.
+func (m *PostgresDB) InsertUserImage(i data.UserImage) (int, error) <span class="cov0" title="0">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 

@@ -2,23 +2,29 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"testing"
+	"webapp/pkg/data"
 	"webapp/pkg/repository/datasource"
 )
 
 var app application
 
+var users = []*data.User{
+	{
+		ID:        1,
+		Email:     "admin@example.com",
+		FirstName: "Admin",
+		LastName:  "User",
+		Password:  "$2a$14$ajq8Q7fbtFRQvXpdCq7Jcuy.Rx1h/L4J60Otx.gyNLbAYctGMJ9tK",
+	},
+}
+
 func TestMain(m *testing.M) {
 	fmt.Println("Setting up")
 	app.Session = getSession()
-	app.DSN = "host=localhost port=5432 user=postgres password=postgres dbname=users"
-	conn, err := app.connectToDB()
-
-	if err != nil {
-		log.Fatal("Error connecting to database: " + err.Error())
+	app.DB = &datasource.TestDB{
+		Users: users,
 	}
-	app.DB = &datasource.PostgresDB{DB: conn}
 	os.Exit(m.Run())
 }
