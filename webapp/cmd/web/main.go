@@ -21,7 +21,7 @@ func main() {
 	gob.Register(data.User{})
 	app := &application{}
 
-	flag.StringVar(&app.DSN, "dsn", "host=localhost port=5432 user=postgres password=postgres dbname=users ", "Postgres connection")
+	flag.StringVar(&app.DSN, "dsn", "host=localhost port=5432 user=postgres password=postgres dbname=users", "Postgres connection")
 	flag.Parse()
 
 	conn, err := app.connectToDB()

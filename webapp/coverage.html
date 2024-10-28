@@ -55,17 +55,23 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">webapp/cmd/web/forms.go (100.0%)</option>
+				<option value="file0">webapp/cmd/web/db.go (75.0%)</option>
 				
-				<option value="file1">webapp/cmd/web/handlers.go (100.0%)</option>
+				<option value="file1">webapp/cmd/web/forms.go (100.0%)</option>
 				
-				<option value="file2">webapp/cmd/web/main.go (0.0%)</option>
+				<option value="file2">webapp/cmd/web/handlers.go (97.9%)</option>
 				
-				<option value="file3">webapp/cmd/web/middlewares.go (100.0%)</option>
+				<option value="file3">webapp/cmd/web/main.go (0.0%)</option>
 				
-				<option value="file4">webapp/cmd/web/routes.go (100.0%)</option>
+				<option value="file4">webapp/cmd/web/middlewares.go (100.0%)</option>
 				
-				<option value="file5">webapp/cmd/web/sessions.go (100.0%)</option>
+				<option value="file5">webapp/cmd/web/routes.go (100.0%)</option>
+				
+				<option value="file6">webapp/cmd/web/sessions.go (100.0%)</option>
+				
+				<option value="file7">webapp/pkg/data/users.go (83.3%)</option>
+				
+				<option value="file8">webapp/pkg/db/users_postgres.go (11.7%)</option>
 				
 				</select>
 			</div>
@@ -80,6 +86,39 @@
 		<div id="content">
 		
 		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "database/sql"
+        "log"
+
+        _ "github.com/jackc/pgconn"
+        _ "github.com/jackc/pgx/v4"
+        _ "github.com/jackc/pgx/v4/stdlib"
+)
+
+func openDB(dsn string) (*sql.DB, error) <span class="cov8" title="1">{
+        db, err := sql.Open("pgx", dsn)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">err = db.Ping()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">return db, nil</span>
+}
+
+func (app *application) connectToDB() (*sql.DB, error) <span class="cov8" title="1">{
+        connection, err := openDB(app.DSN)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">log.Println("Connected to database")
+        return connection, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
 
 import (
         "net/url"
@@ -140,22 +179,24 @@ func (f *Form) Valid() bool <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package main
+		<pre class="file" id="file2" style="display: none">package main
 
 import (
-        "fmt"
         "html/template"
-        "log"
         "net/http"
         "path"
         "time"
+        "webapp/pkg/data"
 )
 
 var pathTemplate = "./templates/"
 
 type TemplateData struct {
-        IP   string
-        Data map[string]any
+        IP    string
+        Data  map[string]any
+        Error string
+        Flash string
+        User  data.User
 }
 
 func (app *application) Home(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
@@ -167,10 +208,13 @@ func (app *application) Home(w http.ResponseWriter, r *http.Request) <span class
                 app.Session.Put(r.Context(), "test", "Hit this page at "+time.Now().UTC().String())
         }</span>
         <span class="cov8" title="1">_ = app.render(w, r, "home.page.html", &amp;TemplateData{
-                IP:   app.ipFromContext(r.Context()),
                 Data: td,
         })</span>
 }
+
+func (app *application) Profile(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        _ = app.render(w, r, "profile.page.html", &amp;TemplateData{})
+}</span>
 
 func (app *application) Login(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
         err := r.ParseForm()
@@ -184,55 +228,103 @@ func (app *application) Login(w http.ResponseWriter, r *http.Request) <span clas
         form.Required("email", "password")
 
         if !form.Valid() </span><span class="cov8" title="1">{
-                fmt.Fprintln(w, "Form is not valid")
+                app.Session.Put(r.Context(), "error", "Invalid login credentials")
+                http.Redirect(w, r, "/", http.StatusSeeOther)
                 return
         }</span>
 
         <span class="cov8" title="1">email := r.Form.Get("email")
         password := r.Form.Get("password")
 
-        log.Println(email, password)
+        user, err := app.DB.GetUserByEmail(email)
 
-        fmt.Fprintln(w, "Email:", email)</span>
+        if err != nil </span><span class="cov8" title="1">{
+                app.Session.Put(r.Context(), "error", "Invalid login!")
+                http.Redirect(w, r, "/", http.StatusSeeOther)
+                return
+        }</span>
+
+        <span class="cov8" title="1">if !app.authenticate(r, user, password) </span><span class="cov8" title="1">{
+                app.Session.Put(r.Context(), "error", "Invalid login!")
+                http.Redirect(w, r, "/", http.StatusSeeOther)
+                return
+        }</span>
+
+        <span class="cov8" title="1">_ = app.Session.RenewToken(r.Context())
+
+        app.Session.Put(r.Context(), "flash", "Successfully logged in")
+        http.Redirect(w, r, "/user/profile", http.StatusSeeOther)</span>
 }
 
-func (app *application) render(w http.ResponseWriter, _ *http.Request, t string, data *TemplateData) error <span class="cov8" title="1">{
+func (app *application) render(w http.ResponseWriter, r *http.Request, t string, td *TemplateData) error <span class="cov8" title="1">{
         templParsed, err := template.ParseFiles(path.Join(pathTemplate, t), path.Join(pathTemplate, "layout.page.html"))
         if err != nil </span><span class="cov8" title="1">{
                 http.Error(w, "Bad Request", http.StatusBadRequest)
                 return err
         }</span>
-        <span class="cov8" title="1">err = templParsed.Execute(w, data)
+
+        <span class="cov8" title="1">td.IP = app.ipFromContext(r.Context())
+        td.Error = app.Session.PopString(r.Context(), "error")
+        td.Flash = app.Session.PopString(r.Context(), "flash")
+
+        err = templParsed.Execute(w, td)
         if err != nil </span><span class="cov8" title="1">{
                 http.Error(w, "Bad Request", http.StatusBadRequest)
                 return err
         }</span>
         <span class="cov8" title="1">return nil</span>
 }
+
+func (app *application) authenticate(r *http.Request, user *data.User, password string) bool <span class="cov8" title="1">{
+        if valid, err := user.PasswordMatches(password); err != nil || !valid </span><span class="cov8" title="1">{
+                return false
+        }</span>
+        <span class="cov8" title="1">app.Session.Put(r.Context(), "user_id", user.ID)
+        return true</span>
+}
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package main
+		<pre class="file" id="file3" style="display: none">package main
 
 import (
-        "fmt"
+        "encoding/gob"
+        "flag"
         "log"
         "net/http"
+        "webapp/pkg/data"
+        "webapp/pkg/db"
 
         "github.com/alexedwards/scs/v2"
 )
 
 type application struct {
         Session *scs.SessionManager
+        DSN     string
+        DB      db.PostgresConn
 }
 
 func main() <span class="cov0" title="0">{
+        gob.Register(data.User{})
         app := &amp;application{}
+
+        flag.StringVar(&amp;app.DSN, "dsn", "host=localhost port=5432 user=postgres password=postgres dbname=users", "Postgres connection")
+        flag.Parse()
+
+        conn, err := app.connectToDB()
+
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Error connecting to database: " + err.Error())
+        }</span>
+
+        <span class="cov0" title="0">defer conn.Close()
+
+        app.DB = db.PostgresConn{DB: conn}
 
         app.Session = getSession()
 
-        fmt.Println("Starting server on :8080")
+        log.Println("Starting server on :8080")
 
-        err := http.ListenAndServe("localhost:8080", app.routes())
+        err = http.ListenAndServe("localhost:8080", app.routes())
 
         if err != nil </span><span class="cov0" title="0">{
                 log.Fatal("Error starting server: " + err.Error())
@@ -240,7 +332,7 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package main
+		<pre class="file" id="file4" style="display: none">package main
 
 import (
         "context"
@@ -295,7 +387,7 @@ func getIP(r *http.Request) (string, error) <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package main
+		<pre class="file" id="file5" style="display: none">package main
 
 import (
         "net/http"
@@ -314,6 +406,8 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
         router.Get("/", app.Home)
         router.Post("/login", app.Login)
 
+        router.Get("/user/profile", app.Profile)
+
         fs := http.FileServer(http.Dir("./static/"))
         router.Handle("/static/*", http.StripPrefix("/static", fs))
 
@@ -321,7 +415,7 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package main
+		<pre class="file" id="file6" style="display: none">package main
 
 import (
         "net/http"
@@ -338,6 +432,288 @@ func getSession() *scs.SessionManager <span class="cov8" title="1">{
         session.Cookie.Secure = true
         return session
 }</span>
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package data
+
+import (
+        "errors"
+        "golang.org/x/crypto/bcrypt"
+        "time"
+)
+
+// User describes the data for the User type.
+type User struct {
+        ID        int       `json:"id"`
+        FirstName string    `json:"first_name"`
+        LastName  string    `json:"last_name"`
+        Email     string    `json:"email"`
+        Password  string    `json:"-"`
+        IsAdmin   int       `json:"is_admin"`
+        CreatedAt time.Time `json:"-"`
+        UpdatedAt time.Time `json:"-"`
+}
+
+// PasswordMatches uses Go's bcrypt package to compare a user supplied password
+// with the hash we have stored for a given user in the database. If the password
+// and hash match, we return true; otherwise, we return false.
+func (u *User) PasswordMatches(plainText string) (bool, error) <span class="cov8" title="1">{
+        err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainText))
+        if err != nil </span><span class="cov8" title="1">{
+                switch </span>{
+                case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):<span class="cov8" title="1">
+                        // invalid password
+                        return false, nil</span>
+                default:<span class="cov0" title="0">  
+                        return false, err</span>
+                }
+        }
+
+        <span class="cov8" title="1">return true, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package db
+
+import (
+        "context"
+        "database/sql"
+        "webapp/pkg/data"
+        "golang.org/x/crypto/bcrypt"
+        "log"
+        "time"
+)
+
+const dbTimeout = time.Second * 3
+
+type PostgresConn struct {
+        DB *sql.DB
+}
+
+// AllUsers returns all users as a slice of *data.User
+func (m *PostgresConn) AllUsers() ([]*data.User, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        query := `select id, email, first_name, last_name, password, is_admin, created_at, updated_at
+        from users order by last_name`
+
+        rows, err := m.DB.QueryContext(ctx, query)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">defer rows.Close()
+
+        var users []*data.User
+
+        for rows.Next() </span><span class="cov0" title="0">{
+                var user data.User
+                err := rows.Scan(
+                        &amp;user.ID,
+                        &amp;user.Email,
+                        &amp;user.FirstName,
+                        &amp;user.LastName,
+                        &amp;user.Password,
+                        &amp;user.IsAdmin,
+                        &amp;user.CreatedAt,
+                        &amp;user.UpdatedAt,
+                )
+                if err != nil </span><span class="cov0" title="0">{
+                        log.Println("Error scanning", err)
+                        return nil, err
+                }</span>
+
+                <span class="cov0" title="0">users = append(users, &amp;user)</span>
+        }
+
+        <span class="cov0" title="0">return users, nil</span>
+}
+
+// GetUser returns one user by id
+func (m *PostgresConn) GetUser(id int) (*data.User, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        query := `
+                select 
+                        id, email, first_name, last_name, password, is_admin, created_at, updated_at 
+                from 
+                        users 
+                where 
+                    id = $1`
+
+        var user data.User
+        row := m.DB.QueryRowContext(ctx, query, id)
+
+        err := row.Scan(
+                &amp;user.ID,
+                &amp;user.Email,
+                &amp;user.FirstName,
+                &amp;user.LastName,
+                &amp;user.Password,
+                &amp;user.IsAdmin,
+                &amp;user.CreatedAt,
+                &amp;user.UpdatedAt,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">return &amp;user, nil</span>
+}
+
+// GetUserByEmail returns one user by email address
+func (m *PostgresConn) GetUserByEmail(email string) (*data.User, error) <span class="cov8" title="1">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        query := `
+                select 
+                        id, email, first_name, last_name, password, is_admin, created_at, updated_at 
+                from 
+                        users 
+                where 
+                    email = $1`
+
+        var user data.User
+        row := m.DB.QueryRowContext(ctx, query, email)
+
+        err := row.Scan(
+                &amp;user.ID,
+                &amp;user.Email,
+                &amp;user.FirstName,
+                &amp;user.LastName,
+                &amp;user.Password,
+                &amp;user.IsAdmin,
+                &amp;user.CreatedAt,
+                &amp;user.UpdatedAt,
+        )
+
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov8" title="1">return &amp;user, nil</span>
+}
+
+// UpdateUser updates one user in the database
+func (m *PostgresConn) UpdateUser(u data.User) error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        stmt := `update users set
+                email = $1,
+                first_name = $2,
+                last_name = $3,
+                is_admin = $4,
+                updated_at = $5
+                where id = $6
+        `
+
+        _, err := m.DB.ExecContext(ctx, stmt,
+                u.Email,
+                u.FirstName,
+                u.LastName,
+                u.IsAdmin,
+                time.Now(),
+                u.ID,
+        )
+
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// DeleteUser deletes one user from the database, by id
+func (m *PostgresConn) DeleteUser(id int) error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        stmt := `delete from users where id = $1`
+
+        _, err := m.DB.ExecContext(ctx, stmt, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// InsertUser inserts a new user into the database, and returns the ID of the newly inserted row
+func (m *PostgresConn) InsertUser(user data.User) (int, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 12)
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov0" title="0">var newID int
+        stmt := `insert into users (email, first_name, last_name, password, is_admin, created_at, updated_at)
+                values ($1, $2, $3, $4, $5, $6, $7) returning id`
+
+        err = m.DB.QueryRowContext(ctx, stmt,
+                user.Email,
+                user.FirstName,
+                user.LastName,
+                hashedPassword,
+                user.IsAdmin,
+                time.Now(),
+                time.Now(),
+        ).Scan(&amp;newID)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov0" title="0">return newID, nil</span>
+}
+
+// ResetPassword is the method we will use to change a user's password.
+func (m *PostgresConn) ResetPassword(id int, password string) error <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">stmt := `update users set password = $1 where id = $2`
+        _, err = m.DB.ExecContext(ctx, stmt, hashedPassword, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// InsertUserImage inserts a user profile image into the database.
+func (m *PostgresConn) InsertUserImage(i data.UserImage) (int, error) <span class="cov0" title="0">{
+        ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
+        defer cancel()
+
+        var newID int
+        stmt := `insert into user_images (user_id, fileName, created_at, updated_at)
+                values ($1, $2, $3, $4) returning id`
+
+        err := m.DB.QueryRowContext(ctx, stmt,
+                i.UserID,
+                i.FileName,
+                time.Now(),
+                time.Now(),
+        ).Scan(&amp;newID)
+
+        if err != nil </span><span class="cov0" title="0">{
+                return 0, err
+        }</span>
+
+        <span class="cov0" title="0">return newID, nil</span>
+}
 </pre>
 		
 		</div>
