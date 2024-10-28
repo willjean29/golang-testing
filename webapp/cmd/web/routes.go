@@ -17,6 +17,8 @@ func (app *application) routes() http.Handler {
 	router.Get("/", app.Home)
 	router.Post("/login", app.Login)
 
+	router.Get("/user/profile", app.Profile)
+
 	fs := http.FileServer(http.Dir("./static/"))
 	router.Handle("/static/*", http.StripPrefix("/static", fs))
 
