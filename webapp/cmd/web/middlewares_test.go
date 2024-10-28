@@ -62,3 +62,32 @@ func Test_application_ipFromContext(t *testing.T) {
 		t.Errorf("expected %s, got %s", mockIP, ip)
 	}
 }
+
+func Test_application_auth(t *testing.T) {
+	tests := []struct {
+		name   string
+		isAuth bool
+	}{
+		{"logged in", true},
+		{"not logged in", false},
+	}
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handlerTest := app.auth(nextHandler)
+			req := httptest.NewRequest("GET", "/testing", nil)
+			req = addContextAndSessionToRequest(req)
+			if tt.isAuth {
+				app.Session.Put(req.Context(), "user_id", 1)
+			}
+			res := httptest.NewRecorder()
+			handlerTest.ServeHTTP(res, req)
+			if tt.isAuth && res.Code != http.StatusOK {
+				t.Errorf("expected status code %d, got %d", http.StatusOK, res.Code)
+			}
+			if !tt.isAuth && res.Code != http.StatusTemporaryRedirect {
+				t.Errorf("expected status code %d, got %d", http.StatusTemporaryRedirect, res.Code)
+			}
+		})
+	}
+}

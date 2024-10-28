@@ -385,6 +385,17 @@ func getIP(r *http.Request) (string, error) <span class="cov8" title="1">{
 
         <span class="cov8" title="1">return ip, nil</span>
 }
+
+func (app *application) auth(next http.Handler) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                if !app.Session.Exists(r.Context(), "user_id") </span><span class="cov8" title="1">{
+                        app.Session.Put(r.Context(), "error", "Log in first!")
+                        http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+                        return
+                }</span>
+                <span class="cov8" title="1">next.ServeHTTP(w, r)</span>
+        })
+}
 </pre>
 		
 		<pre class="file" id="file5" style="display: none">package main
@@ -406,13 +417,16 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
         router.Get("/", app.Home)
         router.Post("/login", app.Login)
 
-        router.Get("/user/profile", app.Profile)
+        router.Route("/user", func(r chi.Router) </span><span class="cov8" title="1">{
+                r.Use(app.auth)
+                r.Get("/profile", app.Profile)
+        }</span>)
 
-        fs := http.FileServer(http.Dir("./static/"))
+        <span class="cov8" title="1">fs := http.FileServer(http.Dir("./static/"))
         router.Handle("/static/*", http.StripPrefix("/static", fs))
 
-        return router
-}</span>
+        return router</span>
+}
 </pre>
 		
 		<pre class="file" id="file6" style="display: none">package main

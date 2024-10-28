@@ -99,7 +99,13 @@ webapp/cmd/web/middlewares.go:43.19,45.3 1 1
 webapp/cmd/web/middlewares.go:47.2,48.22 2 1
 webapp/cmd/web/middlewares.go:48.22,50.3 1 1
 webapp/cmd/web/middlewares.go:52.2,52.16 1 1
-webapp/cmd/web/routes.go:10.47,26.2 10 1
+webapp/cmd/web/middlewares.go:55.62,56.71 1 1
+webapp/cmd/web/middlewares.go:56.71,57.50 1 1
+webapp/cmd/web/middlewares.go:57.50,61.4 3 1
+webapp/cmd/web/middlewares.go:62.3,62.23 1 1
+webapp/cmd/web/routes.go:10.47,20.43 7 1
+webapp/cmd/web/routes.go:20.43,23.3 2 1
+webapp/cmd/web/routes.go:25.2,28.15 3 1
 webapp/cmd/web/sessions.go:10.39,17.2 6 1
 webapp/pkg/data/users.go:24.64,26.16 2 1
 webapp/pkg/data/users.go:26.16,27.10 1 1
