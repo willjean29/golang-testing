@@ -71,7 +71,7 @@
 				
 				<option value="file7">webapp/pkg/data/users.go (83.3%)</option>
 				
-				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (14.1%)</option>
+				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (30.8%)</option>
 				
 				<option value="file9">webapp/pkg/repository/datasource/users_testdb.go (0.0%)</option>
 				
@@ -513,7 +513,7 @@ func (m *PostgresDB) Connection() *sql.DB <span class="cov0" title="0">{
 }</span>
 
 // AllUsers returns all users as a slice of *data.User
-func (m *PostgresDB) AllUsers() ([]*data.User, error) <span class="cov0" title="0">{
+func (m *PostgresDB) AllUsers() ([]*data.User, error) <span class="cov8" title="1">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
@@ -524,11 +524,11 @@ func (m *PostgresDB) AllUsers() ([]*data.User, error) <span class="cov0" title="
         if err != nil </span><span class="cov0" title="0">{
                 return nil, err
         }</span>
-        <span class="cov0" title="0">defer rows.Close()
+        <span class="cov8" title="1">defer rows.Close()
 
         var users []*data.User
 
-        for rows.Next() </span><span class="cov0" title="0">{
+        for rows.Next() </span><span class="cov8" title="1">{
                 var user data.User
                 err := rows.Scan(
                         &amp;user.ID,
@@ -545,10 +545,10 @@ func (m *PostgresDB) AllUsers() ([]*data.User, error) <span class="cov0" title="
                         return nil, err
                 }</span>
 
-                <span class="cov0" title="0">users = append(users, &amp;user)</span>
+                <span class="cov8" title="1">users = append(users, &amp;user)</span>
         }
 
-        <span class="cov0" title="0">return users, nil</span>
+        <span class="cov8" title="1">return users, nil</span>
 }
 
 // GetUser returns one user by id

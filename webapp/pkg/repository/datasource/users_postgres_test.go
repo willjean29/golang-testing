@@ -169,3 +169,26 @@ func TestPostgresDBInsertUser(t *testing.T) {
 		})
 	}
 }
+
+func TestPostgresDBIAllUsers(t *testing.T) {
+	user := data.User{
+		Email:     "admin@example.com",
+		FirstName: "John",
+		LastName:  "Doe",
+		Password:  "password",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	testRepo.InsertUser(user)
+
+	users, err := testRepo.AllUsers()
+	if err != nil {
+		t.Errorf("PostgresDB.AllUsers() error = %v", err)
+	}
+
+	if len(users) <= 0 {
+		t.Errorf("PostgresDB.AllUsers() = %v", len(users))
+	}
+}
