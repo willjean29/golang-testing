@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"testing"
+	"time"
+	"webapp/pkg/data"
+	"webapp/pkg/repository"
 
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
@@ -26,6 +30,7 @@ var (
 var resource *dockertest.Resource
 var pool *dockertest.Pool
 var testDB *sql.DB
+var testRepo repository.Repository
 
 func TestMain(m *testing.M) {
 	p, err := dockertest.NewPool("")
@@ -73,6 +78,8 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not create tables: %s", err)
 	}
 
+	testRepo = &PostgresDB{DB: testDB}
+
 	code := m.Run()
 	if err := pool.Purge(resource); err != nil {
 		log.Fatalf("could not purge resource: %s", err)
@@ -100,5 +107,65 @@ func Test_pingDB(t *testing.T) {
 	err := testDB.Ping()
 	if err != nil {
 		t.Errorf("pingDB() failed: %s", err)
+	}
+}
+
+func TestPostgresDBInsertUser(t *testing.T) {
+	tests := []struct {
+		name    string
+		user    data.User
+		wantErr bool
+	}{
+		{
+			name: "insert user",
+			user: data.User{
+				Email:     "admin@example.com",
+				FirstName: "John",
+				LastName:  "Doe",
+				Password:  "password",
+				IsAdmin:   1,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			wantErr: false,
+		},
+		{
+			name: "error inserting user when fail sql query",
+			user: data.User{
+				Email:     "admin@example.com",
+				FirstName: strings.Repeat("Jhon", 256),
+				LastName:  "Doe",
+				Password:  "password",
+				IsAdmin:   1,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "error inserting user when fail generate password hash",
+			user: data.User{
+				Email:     "admin@example.com",
+				FirstName: "Jhon",
+				LastName:  "Doe",
+				Password:  strings.Repeat("secret", 256),
+				IsAdmin:   1,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			id, err := testRepo.InsertUser(tt.user)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("PostgresDB.InsertUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && id != 1 {
+				t.Errorf("PostgresDB.InsertUser() = %v, want %v", id, 1)
+			}
+		})
 	}
 }
