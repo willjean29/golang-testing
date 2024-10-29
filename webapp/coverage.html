@@ -71,7 +71,7 @@
 				
 				<option value="file7">webapp/pkg/data/users.go (83.3%)</option>
 				
-				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (30.8%)</option>
+				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (59.0%)</option>
 				
 				<option value="file9">webapp/pkg/repository/datasource/users_testdb.go (0.0%)</option>
 				
@@ -552,7 +552,7 @@ func (m *PostgresDB) AllUsers() ([]*data.User, error) <span class="cov8" title="
 }
 
 // GetUser returns one user by id
-func (m *PostgresDB) GetUser(id int) (*data.User, error) <span class="cov0" title="0">{
+func (m *PostgresDB) GetUser(id int) (*data.User, error) <span class="cov8" title="1">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
@@ -582,11 +582,11 @@ func (m *PostgresDB) GetUser(id int) (*data.User, error) <span class="cov0" titl
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">return &amp;user, nil</span>
+        <span class="cov8" title="1">return &amp;user, nil</span>
 }
 
 // GetUserByEmail returns one user by email address
-func (m *PostgresDB) GetUserByEmail(email string) (*data.User, error) <span class="cov0" title="0">{
+func (m *PostgresDB) GetUserByEmail(email string) (*data.User, error) <span class="cov8" title="1">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
@@ -616,7 +616,7 @@ func (m *PostgresDB) GetUserByEmail(email string) (*data.User, error) <span clas
                 return nil, err
         }</span>
 
-        <span class="cov0" title="0">return &amp;user, nil</span>
+        <span class="cov8" title="1">return &amp;user, nil</span>
 }
 
 // UpdateUser updates one user in the database
@@ -650,7 +650,7 @@ func (m *PostgresDB) UpdateUser(u data.User) error <span class="cov0" title="0">
 }
 
 // DeleteUser deletes one user from the database, by id
-func (m *PostgresDB) DeleteUser(id int) error <span class="cov0" title="0">{
+func (m *PostgresDB) DeleteUser(id int) error <span class="cov8" title="1">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
@@ -661,7 +661,7 @@ func (m *PostgresDB) DeleteUser(id int) error <span class="cov0" title="0">{
                 return err
         }</span>
 
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov8" title="1">return nil</span>
 }
 
 // InsertUser inserts a new user into the database, and returns the ID of the newly inserted row

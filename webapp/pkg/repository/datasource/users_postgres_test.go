@@ -168,6 +168,7 @@ func TestPostgresDBInsertUser(t *testing.T) {
 			}
 		})
 	}
+	testRepo.DeleteUser(1)
 }
 
 func TestPostgresDBIAllUsers(t *testing.T) {
@@ -190,5 +191,56 @@ func TestPostgresDBIAllUsers(t *testing.T) {
 
 	if len(users) <= 0 {
 		t.Errorf("PostgresDB.AllUsers() = %v", len(users))
+	}
+	testRepo.DeleteUser(1)
+}
+
+func TestPostgresDBGetUser(t *testing.T) {
+	newUser := data.User{
+		Email:     "admin@example.com",
+		FirstName: "John",
+		LastName:  "Doe",
+		Password:  "password",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	id, err := testRepo.InsertUser(newUser)
+
+	if err != nil {
+		t.Errorf("PostgresDB.InsertUser() error = %v", err)
+	}
+	user, err := testRepo.GetUser(id)
+	log.Println("user", user)
+	if err != nil {
+		t.Errorf("PostgresDB.GetUser() error = %v", err)
+	}
+
+	testRepo.DeleteUser(1)
+}
+
+func TestPostgresDBGetUserByEmail(t *testing.T) {
+	newUser := data.User{
+		Email:     "admin@example.com",
+		FirstName: "John",
+		LastName:  "Doe",
+		Password:  "password",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	_, err := testRepo.InsertUser(newUser)
+
+	if err != nil {
+		t.Errorf("PostgresDB.InsertUser() error = %v", err)
+	}
+
+	user, err := testRepo.GetUserByEmail(newUser.Email)
+	if err != nil {
+		t.Errorf("PostgresDB.GetUserByEmail() error = %v", err)
+	}
+
+	if user.Email != newUser.Email {
+		t.Errorf("PostgresDB.GetUserByEmail() = %v, want %v", user.Email, newUser.Email)
 	}
 }
