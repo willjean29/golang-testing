@@ -297,6 +297,38 @@ func TestPostgresDBDeleteUser(t *testing.T) {
 	cleanDatabase()
 }
 
+func TestPostgresDBResetPassword(t *testing.T) {
+	cleanDatabase()
+	newUser := data.User{
+		Email:     "admin@example.com",
+		FirstName: "John",
+		LastName:  "Doe",
+		Password:  "password",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	id, _ := testRepo.InsertUser(newUser)
+
+	err := testRepo.ResetPassword(id, "secret")
+
+	if err != nil {
+		t.Errorf("PostgresDB.ResetPassword() error = %v", err)
+	}
+
+	user, _ := testRepo.GetUser(id)
+	match, err := user.PasswordMatches("secret")
+	if err != nil {
+		t.Errorf("PostgresDB.PasswordMatches() error = %v", err)
+	}
+
+	if !match {
+		t.Errorf("PostgresDB.PasswordMatches() = %v, want %v", match, true)
+	}
+
+	cleanDatabase()
+}
+
 func cleanDatabase() {
 	_, err := testDB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 	if err != nil {
