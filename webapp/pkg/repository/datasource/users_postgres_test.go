@@ -275,6 +275,26 @@ func TestPostgresDBUpdateUser(t *testing.T) {
 	if user.FirstName != "Jean" && user.LastName != "Osco" {
 		t.Errorf("expected Jean Osco, got %s %s", user.FirstName, user.LastName)
 	}
+	cleanDatabase()
+}
+
+func TestPostgresDBDeleteUser(t *testing.T) {
+	cleanDatabase()
+	newUser := data.User{
+		Email:     "admin@example.com",
+		FirstName: "John",
+		LastName:  "Doe",
+		Password:  "password",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	id, _ := testRepo.InsertUser(newUser)
+	err := testRepo.DeleteUser(id)
+	if err != nil {
+		t.Errorf("PostgresDB.DeleteUser() error = %v", err)
+	}
+	cleanDatabase()
 }
 
 func cleanDatabase() {
