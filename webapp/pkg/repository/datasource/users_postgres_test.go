@@ -111,6 +111,7 @@ func Test_pingDB(t *testing.T) {
 }
 
 func TestPostgresDBInsertUser(t *testing.T) {
+	cleanDatabase()
 	tests := []struct {
 		name    string
 		user    data.User
@@ -168,10 +169,11 @@ func TestPostgresDBInsertUser(t *testing.T) {
 			}
 		})
 	}
-	testRepo.DeleteUser(1)
+	cleanDatabase()
 }
 
-func TestPostgresDBIAllUsers(t *testing.T) {
+func TestPostgresDBAllUsers(t *testing.T) {
+	cleanDatabase()
 	user := data.User{
 		Email:     "admin@example.com",
 		FirstName: "John",
@@ -192,10 +194,11 @@ func TestPostgresDBIAllUsers(t *testing.T) {
 	if len(users) <= 0 {
 		t.Errorf("PostgresDB.AllUsers() = %v", len(users))
 	}
-	testRepo.DeleteUser(1)
+	cleanDatabase()
 }
 
 func TestPostgresDBGetUser(t *testing.T) {
+	cleanDatabase()
 	newUser := data.User{
 		Email:     "admin@example.com",
 		FirstName: "John",
@@ -216,10 +219,11 @@ func TestPostgresDBGetUser(t *testing.T) {
 		t.Errorf("PostgresDB.GetUser() error = %v", err)
 	}
 
-	testRepo.DeleteUser(1)
+	cleanDatabase()
 }
 
 func TestPostgresDBGetUserByEmail(t *testing.T) {
+	cleanDatabase()
 	newUser := data.User{
 		Email:     "admin@example.com",
 		FirstName: "John",
@@ -242,5 +246,13 @@ func TestPostgresDBGetUserByEmail(t *testing.T) {
 
 	if user.Email != newUser.Email {
 		t.Errorf("PostgresDB.GetUserByEmail() = %v, want %v", user.Email, newUser.Email)
+	}
+	cleanDatabase()
+}
+
+func cleanDatabase() {
+	_, err := testDB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
+	if err != nil {
+		log.Println("Error cleaning database", err)
 	}
 }
