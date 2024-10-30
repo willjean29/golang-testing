@@ -620,7 +620,7 @@ func (m *PostgresDB) GetUserByEmail(email string) (*data.User, error) <span clas
 }
 
 // UpdateUser updates one user in the database
-func (m *PostgresDB) UpdateUser(u data.User) error <span class="cov0" title="0">{
+func (m *PostgresDB) UpdateUser(u data.User) error <span class="cov8" title="1">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
@@ -646,11 +646,11 @@ func (m *PostgresDB) UpdateUser(u data.User) error <span class="cov0" title="0">
                 return err
         }</span>
 
-        <span class="cov0" title="0">return nil</span>
+        <span class="cov8" title="1">return nil</span>
 }
 
 // DeleteUser deletes one user from the database, by id
-func (m *PostgresDB) DeleteUser(id int) error <span class="cov8" title="1">{
+func (m *PostgresDB) DeleteUser(id int) error <span class="cov0" title="0">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
@@ -661,7 +661,7 @@ func (m *PostgresDB) DeleteUser(id int) error <span class="cov8" title="1">{
                 return err
         }</span>
 
-        <span class="cov8" title="1">return nil</span>
+        <span class="cov0" title="0">return nil</span>
 }
 
 // InsertUser inserts a new user into the database, and returns the ID of the newly inserted row

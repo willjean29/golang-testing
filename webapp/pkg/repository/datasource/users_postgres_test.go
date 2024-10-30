@@ -250,6 +250,33 @@ func TestPostgresDBGetUserByEmail(t *testing.T) {
 	cleanDatabase()
 }
 
+func TestPostgresDBUpdateUser(t *testing.T) {
+	cleanDatabase()
+	newUser := data.User{
+		Email:     "admin@example.com",
+		FirstName: "John",
+		LastName:  "Doe",
+		Password:  "password",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	id, _ := testRepo.InsertUser(newUser)
+	user, _ := testRepo.GetUser(id)
+	user.FirstName = "Jean"
+	user.LastName = "Osco"
+
+	err := testRepo.UpdateUser(*user)
+	if err != nil {
+		t.Errorf("PostgresDB.UpdateUser() error = %v", err)
+	}
+
+	user, _ = testRepo.GetUser(id)
+	if user.FirstName != "Jean" && user.LastName != "Osco" {
+		t.Errorf("expected Jean Osco, got %s %s", user.FirstName, user.LastName)
+	}
+}
+
 func cleanDatabase() {
 	_, err := testDB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 	if err != nil {
