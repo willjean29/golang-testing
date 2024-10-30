@@ -71,7 +71,7 @@
 				
 				<option value="file7">webapp/pkg/data/users.go (83.3%)</option>
 				
-				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (76.9%)</option>
+				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (85.9%)</option>
 				
 				<option value="file9">webapp/pkg/repository/datasource/users_testdb.go (0.0%)</option>
 				
@@ -715,12 +715,12 @@ func (m *PostgresDB) ResetPassword(id int, password string) error <span class="c
 }
 
 // InsertUserImage inserts a user profile image into the database.
-func (m *PostgresDB) InsertUserImage(i data.UserImage) (int, error) <span class="cov0" title="0">{
+func (m *PostgresDB) InsertUserImage(i data.UserImage) (int, error) <span class="cov8" title="1">{
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
         var newID int
-        stmt := `insert into user_images (user_id, fileName, created_at, updated_at)
+        stmt := `insert into user_images (user_id, file_name, created_at, updated_at)
                 values ($1, $2, $3, $4) returning id`
 
         err := m.DB.QueryRowContext(ctx, stmt,
@@ -734,7 +734,7 @@ func (m *PostgresDB) InsertUserImage(i data.UserImage) (int, error) <span class=
                 return 0, err
         }</span>
 
-        <span class="cov0" title="0">return newID, nil</span>
+        <span class="cov8" title="1">return newID, nil</span>
 }
 </pre>
 		

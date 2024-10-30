@@ -329,6 +329,37 @@ func TestPostgresDBResetPassword(t *testing.T) {
 	cleanDatabase()
 }
 
+func TestPostgresDBInsertUserImage(t *testing.T) {
+	cleanDatabase()
+	newUser := data.User{
+		Email:     "admin@example.com",
+		FirstName: "John",
+		LastName:  "Doe",
+		Password:  "password",
+		IsAdmin:   1,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+	id, _ := testRepo.InsertUser(newUser)
+
+	userImage := data.UserImage{
+		UserID:    id,
+		FileName:  "image.jpg",
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+
+	imageID, err := testRepo.InsertUserImage(userImage)
+	if err != nil {
+		t.Errorf("PostgresDB.InsertUserImage() error = %v", err)
+	}
+
+	if imageID != 1 {
+		t.Errorf("PostgresDB.InsertUserImage() = %v, want %v", imageID, 1)
+	}
+	cleanDatabase()
+}
+
 func cleanDatabase() {
 	_, err := testDB.Exec("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
 	if err != nil {
