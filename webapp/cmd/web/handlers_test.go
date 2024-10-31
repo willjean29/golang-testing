@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"image"
 	"image/png"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"webapp/pkg/data"
 )
 
 func setup() {
@@ -229,4 +232,47 @@ func simulatePngUpload(fileToUpload string, writer *multipart.Writer, t *testing
 
 	// write the image to our io.Writer
 	err = png.Encode(part, img)
+}
+
+func Test_app_uploadProfilePic(t *testing.T) {
+	pathStatic = "./../../static/img/"
+	filePath := "./../../static/img/test/img.png"
+
+	fieldName := "file"
+
+	body := &bytes.Buffer{}
+
+	// create a new writer
+	writer := multipart.NewWriter(body)
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// create a new form data field "file" with value being filename
+	part, err := writer.CreateFormFile(fieldName, filePath)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if _, err := io.Copy(part, file); err != nil {
+		t.Error(err)
+	}
+
+	writer.Close()
+
+	request := httptest.NewRequest("POST", "/upload", body)
+	request.Header.Add("Content-Type", writer.FormDataContentType())
+	request = addContextAndSessionToRequest(request)
+	app.Session.Put(request.Context(), "user", data.User{ID: 1})
+
+	res := httptest.NewRecorder()
+
+	app.UploadProfilePic(res, request)
+	log.Println(res.Body.String())
+	if res.Code != http.StatusSeeOther {
+		t.Errorf("expected status %d, got %d", http.StatusSeeOther, res.Code)
+	}
+	_ = os.Remove("./../../static/img/img.png")
 }

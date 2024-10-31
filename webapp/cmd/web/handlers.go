@@ -13,6 +13,7 @@ import (
 )
 
 var pathTemplate = "./templates/"
+var pathStatic = "./static/img"
 
 type TemplateData struct {
 	IP    string
@@ -109,7 +110,7 @@ func (app *application) authenticate(r *http.Request, user *data.User, password 
 }
 
 func (app *application) UploadProfilePic(w http.ResponseWriter, r *http.Request) {
-	files, err := app.UploadFiles(r, "./static/img")
+	files, err := app.UploadFiles(r, pathStatic)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

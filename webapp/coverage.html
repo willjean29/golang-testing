@@ -59,7 +59,7 @@
 				
 				<option value="file1">webapp/cmd/web/forms.go (100.0%)</option>
 				
-				<option value="file2">webapp/cmd/web/handlers.go (74.7%)</option>
+				<option value="file2">webapp/cmd/web/handlers.go (85.7%)</option>
 				
 				<option value="file3">webapp/cmd/web/main.go (0.0%)</option>
 				
@@ -196,6 +196,7 @@ import (
 )
 
 var pathTemplate = "./templates/"
+var pathStatic = "./static/img"
 
 type TemplateData struct {
         IP    string
@@ -291,15 +292,15 @@ func (app *application) authenticate(r *http.Request, user *data.User, password 
         return true</span>
 }
 
-func (app *application) UploadProfilePic(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
-        files, err := app.UploadFiles(r, "./static/img")
+func (app *application) UploadProfilePic(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        files, err := app.UploadFiles(r, pathStatic)
 
         if err != nil </span><span class="cov0" title="0">{
                 http.Error(w, err.Error(), http.StatusBadRequest)
                 return
         }</span>
 
-        <span class="cov0" title="0">user := app.Session.Get(r.Context(), "user").(data.User)
+        <span class="cov8" title="1">user := app.Session.Get(r.Context(), "user").(data.User)
         var userImage = data.UserImage{
                 UserID:   user.ID,
                 FileName: files[0].OriginalFileName,
@@ -312,14 +313,14 @@ func (app *application) UploadProfilePic(w http.ResponseWriter, r *http.Request)
                 return
         }</span>
 
-        <span class="cov0" title="0">updatedUser, err := app.DB.GetUser(user.ID)
+        <span class="cov8" title="1">updatedUser, err := app.DB.GetUser(user.ID)
 
         if err != nil </span><span class="cov0" title="0">{
                 http.Error(w, err.Error(), http.StatusBadRequest)
                 return
         }</span>
 
-        <span class="cov0" title="0">app.Session.Put(r.Context(), "user", updatedUser)
+        <span class="cov8" title="1">app.Session.Put(r.Context(), "user", updatedUser)
 
         http.Redirect(w, r, "/user/profile", http.StatusSeeOther)</span>
 }
