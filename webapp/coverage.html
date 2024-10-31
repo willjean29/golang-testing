@@ -59,7 +59,7 @@
 				
 				<option value="file1">webapp/cmd/web/forms.go (100.0%)</option>
 				
-				<option value="file2">webapp/cmd/web/handlers.go (97.9%)</option>
+				<option value="file2">webapp/cmd/web/handlers.go (74.7%)</option>
 				
 				<option value="file3">webapp/cmd/web/main.go (0.0%)</option>
 				
@@ -71,7 +71,7 @@
 				
 				<option value="file7">webapp/pkg/data/users.go (83.3%)</option>
 				
-				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (85.9%)</option>
+				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (86.2%)</option>
 				
 				<option value="file9">webapp/pkg/repository/datasource/users_testdb.go (0.0%)</option>
 				
@@ -184,9 +184,13 @@ func (f *Form) Valid() bool <span class="cov8" title="1">{
 		<pre class="file" id="file2" style="display: none">package main
 
 import (
+        "fmt"
         "html/template"
+        "io"
         "net/http"
+        "os"
         "path"
+        "path/filepath"
         "time"
         "webapp/pkg/data"
 )
@@ -269,9 +273,11 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, t string,
         td.Error = app.Session.PopString(r.Context(), "error")
         td.Flash = app.Session.PopString(r.Context(), "flash")
 
-        err = templParsed.Execute(w, td)
+        if app.Session.Exists(r.Context(), "user") </span><span class="cov0" title="0">{
+                td.User = app.Session.Get(r.Context(), "user").(data.User)
+        }</span>
+        <span class="cov8" title="1">err = templParsed.Execute(w, td)
         if err != nil </span><span class="cov8" title="1">{
-                http.Error(w, "Bad Request", http.StatusBadRequest)
                 return err
         }</span>
         <span class="cov8" title="1">return nil</span>
@@ -281,8 +287,90 @@ func (app *application) authenticate(r *http.Request, user *data.User, password 
         if valid, err := user.PasswordMatches(password); err != nil || !valid </span><span class="cov8" title="1">{
                 return false
         }</span>
-        <span class="cov8" title="1">app.Session.Put(r.Context(), "user_id", user.ID)
+        <span class="cov8" title="1">app.Session.Put(r.Context(), "user", user)
         return true</span>
+}
+
+func (app *application) UploadProfilePic(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        files, err := app.UploadFiles(r, "./static/img")
+
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">user := app.Session.Get(r.Context(), "user").(data.User)
+        var userImage = data.UserImage{
+                UserID:   user.ID,
+                FileName: files[0].OriginalFileName,
+        }
+
+        _, err = app.DB.InsertUserImage(userImage)
+
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">updatedUser, err := app.DB.GetUser(user.ID)
+
+        if err != nil </span><span class="cov0" title="0">{
+                http.Error(w, err.Error(), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">app.Session.Put(r.Context(), "user", updatedUser)
+
+        http.Redirect(w, r, "/user/profile", http.StatusSeeOther)</span>
+}
+
+type UploadedFile struct {
+        OriginalFileName string
+        FileSize         int64
+}
+
+func (app *application) UploadFiles(r *http.Request, uploadDir string) ([]*UploadedFile, error) <span class="cov8" title="1">{
+        var uploadedFiles []*UploadedFile
+        err := r.ParseMultipartForm(10 &lt;&lt; 20)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("Error parsing form: %v", err)
+        }</span>
+
+        <span class="cov8" title="1">for _, fileHeaders := range r.MultipartForm.File </span><span class="cov8" title="1">{
+                for _, hdr := range fileHeaders </span><span class="cov8" title="1">{
+                        uploadedFiles, err = func(uploadedFiles []*UploadedFile) ([]*UploadedFile, error) </span><span class="cov8" title="1">{
+                                var uploadedFile UploadedFile
+                                infile, err := hdr.Open()
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return nil, err
+                                }</span>
+                                <span class="cov8" title="1">defer infile.Close()
+                                uploadedFile.OriginalFileName = hdr.Filename
+
+                                var outfile *os.File
+                                defer outfile.Close()
+
+                                outfile, err = os.Create(filepath.Join(uploadDir, uploadedFile.OriginalFileName))
+
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return nil, err
+                                }</span> else<span class="cov8" title="1"> {
+                                        fileSize, err := io.Copy(outfile, infile)
+                                        if err != nil </span><span class="cov0" title="0">{
+                                                return nil, err
+                                        }</span>
+                                        <span class="cov8" title="1">uploadedFile.FileSize = fileSize</span>
+                                }
+                                <span class="cov8" title="1">uploadedFiles = append(uploadedFiles, &amp;uploadedFile)
+                                return uploadedFiles, nil</span>
+                        }(uploadedFiles)
+                        <span class="cov8" title="1">if err != nil </span><span class="cov0" title="0">{
+                                return nil, err
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return uploadedFiles, nil</span>
 }
 </pre>
 		
@@ -391,7 +479,7 @@ func getIP(r *http.Request) (string, error) <span class="cov8" title="1">{
 
 func (app *application) auth(next http.Handler) http.Handler <span class="cov8" title="1">{
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
-                if !app.Session.Exists(r.Context(), "user_id") </span><span class="cov8" title="1">{
+                if !app.Session.Exists(r.Context(), "user") </span><span class="cov8" title="1">{
                         app.Session.Put(r.Context(), "error", "Log in first!")
                         http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
                         return
@@ -423,6 +511,7 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
         router.Route("/user", func(r chi.Router) </span><span class="cov8" title="1">{
                 r.Use(app.auth)
                 r.Get("/profile", app.Profile)
+                r.Post("/upload-profile-pic", app.UploadProfilePic)
         }</span>)
 
         <span class="cov8" title="1">fs := http.FileServer(http.Dir("./static/"))
@@ -455,20 +544,22 @@ func getSession() *scs.SessionManager <span class="cov8" title="1">{
 
 import (
         "errors"
-        "golang.org/x/crypto/bcrypt"
         "time"
+
+        "golang.org/x/crypto/bcrypt"
 )
 
 // User describes the data for the User type.
 type User struct {
-        ID        int       `json:"id"`
-        FirstName string    `json:"first_name"`
-        LastName  string    `json:"last_name"`
-        Email     string    `json:"email"`
-        Password  string    `json:"-"`
-        IsAdmin   int       `json:"is_admin"`
-        CreatedAt time.Time `json:"-"`
-        UpdatedAt time.Time `json:"-"`
+        ID         int       `json:"id"`
+        FirstName  string    `json:"first_name"`
+        LastName   string    `json:"last_name"`
+        Email      string    `json:"email"`
+        Password   string    `json:"-"`
+        IsAdmin    int       `json:"is_admin"`
+        CreatedAt  time.Time `json:"-"`
+        UpdatedAt  time.Time `json:"-"`
+        ProfilePic UserImage `json:"- "`
 }
 
 // PasswordMatches uses Go's bcrypt package to compare a user supplied password
@@ -481,7 +572,7 @@ func (u *User) PasswordMatches(plainText string) (bool, error) <span class="cov8
                 case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):<span class="cov8" title="1">
                         // invalid password
                         return false, nil</span>
-                default:<span class="cov0" title="0">  
+                default:<span class="cov0" title="0">
                         return false, err</span>
                 }
         }
@@ -558,11 +649,13 @@ func (m *PostgresDB) GetUser(id int) (*data.User, error) <span class="cov8" titl
 
         query := `
                 select 
-                        id, email, first_name, last_name, password, is_admin, created_at, updated_at 
+                        u.id, u.email, u.first_name, u.last_name, u.password, u.is_admin, u.created_at, u.  updated_at,
+                        coalesce(ui.file_name, '')
                 from 
-                        users 
+                        users u
+                left join user_images ui on (ui.user_id = u.id)
                 where 
-                    id = $1`
+                  u.id = $1`
 
         var user data.User
         row := m.DB.QueryRowContext(ctx, query, id)
@@ -576,6 +669,7 @@ func (m *PostgresDB) GetUser(id int) (*data.User, error) <span class="cov8" titl
                 &amp;user.IsAdmin,
                 &amp;user.CreatedAt,
                 &amp;user.UpdatedAt,
+                &amp;user.ProfilePic.FileName,
         )
 
         if err != nil </span><span class="cov0" title="0">{
@@ -592,11 +686,13 @@ func (m *PostgresDB) GetUserByEmail(email string) (*data.User, error) <span clas
 
         query := `
                 select 
-                        id, email, first_name, last_name, password, is_admin, created_at, updated_at 
+                        u.id, u.email, u.first_name, u.last_name, u.password, u.is_admin, u.created_at, u.  updated_at,
+                        coalesce(ui.file_name, '')
                 from 
-                        users 
+                        users u
+                left join user_images ui on u.id = ui.user_id
                 where 
-                    email = $1`
+                  u.email = $1`
 
         var user data.User
         row := m.DB.QueryRowContext(ctx, query, email)
@@ -610,6 +706,7 @@ func (m *PostgresDB) GetUserByEmail(email string) (*data.User, error) <span clas
                 &amp;user.IsAdmin,
                 &amp;user.CreatedAt,
                 &amp;user.UpdatedAt,
+                &amp;user.ProfilePic.FileName,
         )
 
         if err != nil </span><span class="cov0" title="0">{
@@ -719,11 +816,14 @@ func (m *PostgresDB) InsertUserImage(i data.UserImage) (int, error) <span class=
         ctx, cancel := context.WithTimeout(context.Background(), dbTimeout)
         defer cancel()
 
+        stmt := `delete from user_images where user_id = $1`
+        _, err := m.DB.ExecContext(ctx, stmt, i.UserID)
+
         var newID int
-        stmt := `insert into user_images (user_id, file_name, created_at, updated_at)
+        stmt = `insert into user_images (user_id, file_name, created_at, updated_at)
                 values ($1, $2, $3, $4) returning id`
 
-        err := m.DB.QueryRowContext(ctx, stmt,
+        err = m.DB.QueryRowContext(ctx, stmt,
                 i.UserID,
                 i.FileName,
                 time.Now(),

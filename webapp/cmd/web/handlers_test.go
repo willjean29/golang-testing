@@ -2,11 +2,18 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"image"
+	"image/png"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -165,4 +172,61 @@ func addContextAndSessionToRequest(req *http.Request) *http.Request {
 	req = req.WithContext(getCtx())
 	session, _ := app.Session.Load(req.Context(), req.Header.Get("X-Session"))
 	return req.WithContext(session)
+}
+
+func Test_app_uploadFiles(t *testing.T) {
+	// setup pipe
+	r, w := io.Pipe()
+
+	// create a new writer
+	writer := multipart.NewWriter(w)
+
+	// create a wait group, and add 1 to it
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	// simulate a file upload by writing a file to the writer
+	go simulatePngUpload("./../../static/img/test/img.png", writer, t, wg)
+
+	// read from the reader end of the pipe
+	request := httptest.NewRequest("POST", "/upload", r)
+	request.Header.Add("Content-Type", writer.FormDataContentType())
+
+	// call app.uploadFiles
+	uploadFiles, err := app.UploadFiles(request, "./../../static/img/")
+	if err != nil {
+		t.Error(err)
+	}
+	// perform test
+	if _, err := os.Stat(fmt.Sprintf("./../../static/img/%s", uploadFiles[0].OriginalFileName)); os.IsNotExist(err) {
+		t.Errorf("expected file to exist: %s", err.Error())
+	}
+	// clean up
+	_ = os.Remove(fmt.Sprintf("./../../static/img/%s", uploadFiles[0].OriginalFileName))
+}
+
+func simulatePngUpload(fileToUpload string, writer *multipart.Writer, t *testing.T, wg *sync.WaitGroup) {
+	defer writer.Close()
+	defer wg.Done()
+
+	// create a new form data field "file" with value being filename
+	part, err := writer.CreateFormFile("file", path.Base(fileToUpload))
+	if err != nil {
+		t.Error(err)
+	}
+
+	// open the file
+	file, err := os.Open(fileToUpload)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// decode the image
+	img, _, err := image.Decode(file)
+	if err != nil {
+		t.Error("Error decoded image :", err)
+	}
+
+	// write the image to our io.Writer
+	err = png.Encode(part, img)
 }
