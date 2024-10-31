@@ -20,6 +20,7 @@ func (app *application) routes() http.Handler {
 	router.Route("/user", func(r chi.Router) {
 		r.Use(app.auth)
 		r.Get("/profile", app.Profile)
+		r.Post("/upload-profile-pic", app.UploadProfilePic)
 	})
 
 	fs := http.FileServer(http.Dir("./static/"))

@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
+	"io"
 	"net/http"
+	"os"
 	"path"
+	"path/filepath"
 	"time"
 	"webapp/pkg/data"
 )
@@ -100,4 +104,57 @@ func (app *application) authenticate(r *http.Request, user *data.User, password 
 	}
 	app.Session.Put(r.Context(), "user_id", user.ID)
 	return true
+}
+
+func (app *application) UploadProfilePic(w http.ResponseWriter, r *http.Request) {
+
+}
+
+type UploadedFile struct {
+	OriginalFileName string
+	FileSize         int64
+}
+
+func (app *application) UploadFiles(r *http.Request, uploadDir string) ([]*UploadedFile, error) {
+	var uploadedFiles []*UploadedFile
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing form: %v", err)
+	}
+
+	for _, fileHeaders := range r.MultipartForm.File {
+		for _, hdr := range fileHeaders {
+			uploadedFiles, err = func(uploadedFiles []*UploadedFile) ([]*UploadedFile, error) {
+				var uploadedFile UploadedFile
+				infile, err := hdr.Open()
+				if err != nil {
+					return nil, err
+				}
+				defer infile.Close()
+				uploadedFile.OriginalFileName = hdr.Filename
+
+				var outfile *os.File
+				defer outfile.Close()
+
+				outfile, err = os.Create(filepath.Join(uploadDir, uploadedFile.OriginalFileName))
+
+				if err != nil {
+					return nil, err
+				} else {
+					fileSize, err := io.Copy(outfile, infile)
+					if err != nil {
+						return nil, err
+					}
+					uploadedFile.FileSize = fileSize
+				}
+				uploadedFiles = append(uploadedFiles, &uploadedFile)
+				return uploadedFiles, nil
+			}(uploadedFiles)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return uploadedFiles, nil
 }
