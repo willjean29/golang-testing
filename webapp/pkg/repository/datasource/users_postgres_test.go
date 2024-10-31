@@ -209,7 +209,7 @@ func TestPostgresDBGetUser(t *testing.T) {
 		UpdatedAt: time.Now(),
 	}
 	id, err := testRepo.InsertUser(newUser)
-
+	log.Println("id", id)
 	if err != nil {
 		t.Errorf("PostgresDB.InsertUser() error = %v", err)
 	}
