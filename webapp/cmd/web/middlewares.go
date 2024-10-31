@@ -54,7 +54,7 @@ func getIP(r *http.Request) (string, error) {
 
 func (app *application) auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !app.Session.Exists(r.Context(), "user_id") {
+		if !app.Session.Exists(r.Context(), "user") {
 			app.Session.Put(r.Context(), "error", "Log in first!")
 			http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 			return

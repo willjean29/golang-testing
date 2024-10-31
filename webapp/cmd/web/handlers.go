@@ -90,9 +90,11 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, t string,
 	td.Error = app.Session.PopString(r.Context(), "error")
 	td.Flash = app.Session.PopString(r.Context(), "flash")
 
+	if app.Session.Exists(r.Context(), "user") {
+		td.User = app.Session.Get(r.Context(), "user").(data.User)
+	}
 	err = templParsed.Execute(w, td)
 	if err != nil {
-		http.Error(w, "Bad Request", http.StatusBadRequest)
 		return err
 	}
 	return nil
@@ -102,12 +104,41 @@ func (app *application) authenticate(r *http.Request, user *data.User, password 
 	if valid, err := user.PasswordMatches(password); err != nil || !valid {
 		return false
 	}
-	app.Session.Put(r.Context(), "user_id", user.ID)
+	app.Session.Put(r.Context(), "user", user)
 	return true
 }
 
 func (app *application) UploadProfilePic(w http.ResponseWriter, r *http.Request) {
+	files, err := app.UploadFiles(r, "./static/img")
 
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user := app.Session.Get(r.Context(), "user").(data.User)
+	var userImage = data.UserImage{
+		UserID:   user.ID,
+		FileName: files[0].OriginalFileName,
+	}
+
+	_, err = app.DB.InsertUserImage(userImage)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	updatedUser, err := app.DB.GetUser(user.ID)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	app.Session.Put(r.Context(), "user", updatedUser)
+
+	http.Redirect(w, r, "/user/profile", http.StatusSeeOther)
 }
 
 type UploadedFile struct {

@@ -7,11 +7,10 @@
       <h1 class="mt-3">Profile Page</h1>
       <hr>
 
-      {{if ne .User.ProfilePic.FileName}}
-      <img src="/static/img/{{.User.ProfilePic.FileName}}" class="img-fluid" alt="Profile Picture"
-        style="max-width: 300px;">
+      {{if ne .User.ProfilePic.FileName ""}}
+      <img class="img-fluid" style="max-width: 300px;" src="/static/img/{{.User.ProfilePic.FileName}}" alt="profile">
       {{else}}
-      <p>No profile image uploaded yet ...</p>
+      <p>No profile image uploaded yet...</p>
       {{end}}
       <hr>
 

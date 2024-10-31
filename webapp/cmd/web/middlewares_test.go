@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"webapp/pkg/data"
 )
 
 func Test_application_addIPToContext(t *testing.T) {
@@ -78,7 +79,7 @@ func Test_application_auth(t *testing.T) {
 			req := httptest.NewRequest("GET", "/testing", nil)
 			req = addContextAndSessionToRequest(req)
 			if tt.isAuth {
-				app.Session.Put(req.Context(), "user_id", 1)
+				app.Session.Put(req.Context(), "user", data.User{})
 			}
 			res := httptest.NewRecorder()
 			handlerTest.ServeHTTP(res, req)
