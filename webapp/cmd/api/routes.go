@@ -12,5 +12,17 @@ func (app *application) routes() http.Handler {
 
 	router.Use(middleware.Recoverer)
 
+	router.Post("/auth", app.authenticate)
+	router.Post("/refresh-token", app.refresh)
+
+	// Protected routes
+	router.Route("/users", func(r chi.Router) {
+		r.Get("/", app.allUsers)
+		r.Get("/{userId}", app.getUser)
+		r.Put("/{userId}", app.updateUser)
+		r.Delete("/{userId}", app.deleteUser)
+		r.Post("/", app.insertUser)
+	})
+
 	return router
 }
