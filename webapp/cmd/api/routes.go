@@ -15,6 +15,15 @@ func (app *application) routes() http.Handler {
 	router.Post("/auth", app.authenticate)
 	router.Post("/refresh-token", app.refresh)
 
+	router.Get("/test", func(w http.ResponseWriter, r *http.Request) {
+		var payload = struct {
+			Message string `json:"message"`
+		}{
+			Message: "Hello, World!",
+		}
+		_ = app.writeJSON(w, http.StatusOK, payload)
+	})
+
 	// Protected routes
 	router.Route("/users", func(r chi.Router) {
 		r.Get("/", app.allUsers)
