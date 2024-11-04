@@ -1,9 +1,16 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+)
+
+type Credentials struct {
+	Username string `json:"email"`
+	Password string `json:"password"`
+}
 
 func (app *application) authenticate(w http.ResponseWriter, r *http.Request) {
-	// Authenticate user
+
 }
 
 func (app *application) refresh(w http.ResponseWriter, r *http.Request) {

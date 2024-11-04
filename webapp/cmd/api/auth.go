@@ -2,9 +2,11 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
+	"webapp/pkg/data"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -63,4 +65,42 @@ func (app *application) getTokenFromHeaderAndVerify(w http.ResponseWriter, r *ht
 	}
 
 	return token, claims, nil
+}
+
+func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) {
+	token := jwt.New(jwt.SigningMethodHS256)
+
+	claims := token.Claims.(jwt.MapClaims)
+	claims["name"] = user.FirstName + " " + user.LastName
+	claims["sub"] = fmt.Sprintf("%d", user.ID)
+	claims["aud"] = app.Domain
+	claims["iss"] = app.Domain
+
+	if user.IsAdmin == 1 {
+		claims["admin"] = true
+	} else {
+		claims["admin"] = false
+	}
+
+	claims["exp"] = time.Now().Add(jwtTokenExpiry).Unix()
+	signedAccessToken, err := token.SignedString([]byte(app.JWTSecret))
+	if err != nil {
+		return TokenPairs{}, err
+	}
+
+	refreshToken := jwt.New(jwt.SigningMethodHS256)
+	refreshClaims := refreshToken.Claims.(jwt.MapClaims)
+	refreshClaims["sub"] = fmt.Sprintf("%d", user.ID)
+	refreshClaims["exp"] = time.Now().Add(jwtRefreshTokenExpiry).Unix()
+	signedRefreshToken, err := refreshToken.SignedString([]byte(app.JWTSecret))
+	if err != nil {
+		return TokenPairs{}, err
+	}
+
+	var tokenPairs = TokenPairs{
+		Token: signedAccessToken,
+
+		RefreshToken: signedRefreshToken,
+	}
+	return tokenPairs, nil
 }
