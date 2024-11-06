@@ -57,7 +57,7 @@ func (app *application) getTokenFromHeaderAndVerify(w http.ResponseWriter, r *ht
 		if strings.HasPrefix(err.Error(), "token is expired by") {
 			return "", nil, errors.New("token is expired")
 		}
-		return "", nil, errors.New("invalid token")
+		return "", nil, err
 	}
 
 	if claims.Issuer != app.Domain {

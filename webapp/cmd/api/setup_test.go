@@ -9,7 +9,7 @@ import (
 )
 
 var app application
-var expiredToken string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbiI6dHJ1ZSwiYXVkIjoiZXhhbXBsZS5jb20iLCJleHAiOjE3MzA1MDU4MDcsImlzcyI6ImV4YW1wbGUuY29tIiwibmFtZSI6IkpvaG4gRG9lIiwic3ViIjoiMSJ9.gMOrini1hCxmY57BzRkYswtPE4vtL55obbytHP4XBUQ"
+var expiredToken string = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbiI6dHJ1ZSwiYXVkIjoiZXhhbXBsZS5jb20iLCJleHAiOjE3MzA1MDkwNTcsImlzcyI6ImV4YW1wbGUuY29tIiwibmFtZSI6IkFkbWluIFVzZXIiLCJzdWIiOiIxIn0.cVrukpv1lOlgkEXJqeF_5_L3ZcxbON8h3LIG9j5-6Ts"
 var users = []*data.User{
 	{
 		ID:        1,
