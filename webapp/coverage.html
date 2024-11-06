@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>web: Go Coverage Report</title>
+		<title>api: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,25 +55,37 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">webapp/cmd/web/db.go (0.0%)</option>
+				<option value="file0">webapp/cmd/api/api-handlers.go (88.9%)</option>
 				
-				<option value="file1">webapp/cmd/web/forms.go (100.0%)</option>
+				<option value="file1">webapp/cmd/api/auth.go (43.2%)</option>
 				
-				<option value="file2">webapp/cmd/web/handlers.go (85.7%)</option>
+				<option value="file2">webapp/cmd/api/db.go (0.0%)</option>
 				
-				<option value="file3">webapp/cmd/web/main.go (0.0%)</option>
+				<option value="file3">webapp/cmd/api/main.go (0.0%)</option>
 				
-				<option value="file4">webapp/cmd/web/middlewares.go (100.0%)</option>
+				<option value="file4">webapp/cmd/api/routes.go (0.0%)</option>
 				
-				<option value="file5">webapp/cmd/web/routes.go (100.0%)</option>
+				<option value="file5">webapp/cmd/api/utils.go (88.6%)</option>
 				
-				<option value="file6">webapp/cmd/web/sessions.go (100.0%)</option>
+				<option value="file6">webapp/cmd/web/db.go (0.0%)</option>
 				
-				<option value="file7">webapp/pkg/data/users.go (83.3%)</option>
+				<option value="file7">webapp/cmd/web/forms.go (100.0%)</option>
 				
-				<option value="file8">webapp/pkg/repository/datasource/users_postgres.go (86.2%)</option>
+				<option value="file8">webapp/cmd/web/handlers.go (85.7%)</option>
 				
-				<option value="file9">webapp/pkg/repository/datasource/users_testdb.go (0.0%)</option>
+				<option value="file9">webapp/cmd/web/main.go (0.0%)</option>
+				
+				<option value="file10">webapp/cmd/web/middlewares.go (100.0%)</option>
+				
+				<option value="file11">webapp/cmd/web/routes.go (100.0%)</option>
+				
+				<option value="file12">webapp/cmd/web/sessions.go (100.0%)</option>
+				
+				<option value="file13">webapp/pkg/data/users.go (83.3%)</option>
+				
+				<option value="file14">webapp/pkg/repository/datasource/users_postgres.go (86.2%)</option>
+				
+				<option value="file15">webapp/pkg/repository/datasource/users_testdb.go (0.0%)</option>
 				
 				</select>
 			</div>
@@ -88,6 +100,184 @@
 		<div id="content">
 		
 		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        "errors"
+        "net/http"
+
+        "golang.org/x/crypto/bcrypt"
+)
+
+type Credentials struct {
+        Username string `json:"email"`
+        Password string `json:"password"`
+}
+
+func (app *application) authenticate(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        var credentials Credentials
+
+        err := app.readJSON(w, r, &amp;credentials)
+        if err != nil </span><span class="cov8" title="1">{
+                app.errorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
+                return
+        }</span>
+
+        <span class="cov8" title="1">user, err := app.DB.GetUserByEmail(credentials.Username)
+        if err != nil </span><span class="cov8" title="1">{
+                app.errorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
+                return
+        }</span>
+
+        <span class="cov8" title="1">err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(credentials.Password))
+
+        if err != nil </span><span class="cov8" title="1">{
+                app.errorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
+                return
+        }</span>
+
+        <span class="cov8" title="1">tokenPairs, err := app.generateTokenPair(user)
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, errors.New("unauthorized"), http.StatusUnauthorized)
+                return
+        }</span>
+
+        <span class="cov8" title="1">_ = app.writeJSON(w, http.StatusOK, tokenPairs)</span>
+}
+
+func (app *application) refresh(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
+        // Refresh user
+}</span>
+
+func (app *application) allUsers(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
+        // All users
+}</span>
+
+func (app *application) getUser(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
+        // Get user
+}</span>
+
+func (app *application) updateUser(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
+        // Update user
+}</span>
+
+func (app *application) deleteUser(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
+        // Delete user
+}</span>
+
+func (app *application) insertUser(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
+        // Insert user
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package main
+
+import (
+        "errors"
+        "fmt"
+        "net/http"
+        "strings"
+        "time"
+        "webapp/pkg/data"
+
+        "github.com/golang-jwt/jwt/v5"
+)
+
+const jwtTokenExpiry = time.Minute * 15
+const jwtRefreshTokenExpiry = time.Hour * 24
+
+type TokenPairs struct {
+        Token        string `json:"access_token"`
+        RefreshToken string `json:"refresh_token"`
+}
+
+type Clams struct {
+        Username string `json:"name"`
+        jwt.RegisteredClaims
+}
+
+func (app *application) getTokenFromHeaderAndVerify(w http.ResponseWriter, r *http.Request) (string, *Clams, error) <span class="cov0" title="0">{
+        w.Header().Add("Vary", "Authorization")
+
+        authHeader := r.Header.Get("Authorization")
+
+        if authHeader == "" </span><span class="cov0" title="0">{
+                return "", nil, errors.New("no authorization header")
+        }</span>
+
+        <span class="cov0" title="0">headersParts := strings.Split(authHeader, " ")
+        if len(headersParts) != 2 </span><span class="cov0" title="0">{
+                return "", nil, errors.New("invalid authorization header")
+        }</span>
+
+        <span class="cov0" title="0">if headersParts[0] != "Bearer" </span><span class="cov0" title="0">{
+                return "", nil, errors.New("invalid authorization header")
+        }</span>
+
+        <span class="cov0" title="0">token := headersParts[1]
+
+        claims := &amp;Clams{}
+
+        _, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) </span><span class="cov0" title="0">{
+                if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok </span><span class="cov0" title="0">{
+                        return nil, errors.New("unexpected signing method")
+                }</span>
+                <span class="cov0" title="0">return []byte(app.JWTSecret), nil</span>
+        })
+
+        <span class="cov0" title="0">if err != nil </span><span class="cov0" title="0">{
+                if strings.HasPrefix(err.Error(), "token is expired by") </span><span class="cov0" title="0">{
+                        return "", nil, errors.New("token is expired")
+                }</span>
+                <span class="cov0" title="0">return "", nil, errors.New("invalid token")</span>
+        }
+
+        <span class="cov0" title="0">if claims.Issuer != app.Domain </span><span class="cov0" title="0">{
+                return "", nil, errors.New("incorrect issuer")
+        }</span>
+
+        <span class="cov0" title="0">return token, claims, nil</span>
+}
+
+func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) <span class="cov8" title="1">{
+        token := jwt.New(jwt.SigningMethodHS256)
+
+        claims := token.Claims.(jwt.MapClaims)
+        claims["name"] = user.FirstName + " " + user.LastName
+        claims["sub"] = fmt.Sprintf("%d", user.ID)
+        claims["aud"] = app.Domain
+        claims["iss"] = app.Domain
+
+        if user.IsAdmin == 1 </span><span class="cov0" title="0">{
+                claims["admin"] = true
+        }</span> else<span class="cov8" title="1"> {
+                claims["admin"] = false
+        }</span>
+
+        <span class="cov8" title="1">claims["exp"] = time.Now().Add(jwtTokenExpiry).Unix()
+        signedAccessToken, err := token.SignedString([]byte(app.JWTSecret))
+        if err != nil </span><span class="cov0" title="0">{
+                return TokenPairs{}, err
+        }</span>
+
+        <span class="cov8" title="1">refreshToken := jwt.New(jwt.SigningMethodHS256)
+        refreshClaims := refreshToken.Claims.(jwt.MapClaims)
+        refreshClaims["sub"] = fmt.Sprintf("%d", user.ID)
+        refreshClaims["exp"] = time.Now().Add(jwtRefreshTokenExpiry).Unix()
+        signedRefreshToken, err := refreshToken.SignedString([]byte(app.JWTSecret))
+        if err != nil </span><span class="cov0" title="0">{
+                return TokenPairs{}, err
+        }</span>
+
+        <span class="cov8" title="1">var tokenPairs = TokenPairs{
+                Token: signedAccessToken,
+
+                RefreshToken: signedRefreshToken,
+        }
+        return tokenPairs, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package main
 
 import (
         "database/sql"
@@ -120,7 +310,205 @@ func (app *application) connectToDB() (*sql.DB, error) <span class="cov0" title=
 }
 </pre>
 		
-		<pre class="file" id="file1" style="display: none">package main
+		<pre class="file" id="file3" style="display: none">package main
+
+import (
+        "flag"
+        "log"
+        "net/http"
+        "webapp/pkg/repository"
+        "webapp/pkg/repository/datasource"
+)
+
+type application struct {
+        DSN       string
+        DB        repository.Repository
+        Domain    string
+        JWTSecret string
+}
+
+func main() <span class="cov0" title="0">{
+        var app application
+        flag.StringVar(&amp;app.Domain, "domain", "example.com", "Domain for the application e.g company.com")
+        flag.StringVar(&amp;app.DSN, "dsn", "host=localhost port=5432 user=postgres password=postgres dbname=users", "Postgres connection")
+        flag.StringVar(&amp;app.JWTSecret, "jwt-secret", "secret123", "Secret for JWT")
+        flag.Parse()
+
+        conn, err := app.connectToDB()
+
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Error connecting to database: " + err.Error())
+        }</span>
+        <span class="cov0" title="0">defer conn.Close()
+
+        app.DB = &amp;datasource.PostgresDB{DB: conn}
+
+        log.Println("Starting server on :8080")
+
+        err = http.ListenAndServe("localhost:8080", app.routes())
+
+        if err != nil </span><span class="cov0" title="0">{
+                log.Fatal("Error starting server: " + err.Error())
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package main
+
+import (
+        "net/http"
+
+        "github.com/go-chi/chi/v5"
+        "github.com/go-chi/chi/v5/middleware"
+)
+
+func (app *application) routes() http.Handler <span class="cov0" title="0">{
+        router := chi.NewRouter()
+
+        router.Use(middleware.Recoverer)
+
+        router.Post("/auth", app.authenticate)
+        router.Post("/refresh-token", app.refresh)
+
+        router.Get("/test", func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                var payload = struct {
+                        Message string `json:"message"`
+                }{
+                        Message: "Hello, World!",
+                }
+                _ = app.writeJSON(w, http.StatusOK, payload)
+        }</span>)
+
+        // Protected routes
+        <span class="cov0" title="0">router.Route("/users", func(r chi.Router) </span><span class="cov0" title="0">{
+                r.Get("/", app.allUsers)
+                r.Get("/{userId}", app.getUser)
+                r.Put("/{userId}", app.updateUser)
+                r.Delete("/{userId}", app.deleteUser)
+                r.Post("/", app.insertUser)
+        }</span>)
+
+        <span class="cov0" title="0">return router</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package main
+
+import (
+        "encoding/json"
+        "errors"
+        "io"
+        "net/http"
+)
+
+func (app *application) writeJSON(w http.ResponseWriter, status int, data interface{}, wrap ...string) error <span class="cov8" title="1">{
+        // out will hold the final version of the json to send to the client
+        var out []byte
+
+        // decide if we wrap the json payload in an overall json tag
+        if len(wrap) &gt; 0 </span><span class="cov8" title="1">{
+                // wrapper
+                wrapper := make(map[string]interface{})
+                wrapper[wrap[0]] = data
+                jsonBytes, err := json.Marshal(wrapper)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">out = jsonBytes</span>
+        } else<span class="cov8" title="1"> {
+                // wrapper
+                jsonBytes, err := json.Marshal(data)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov8" title="1">out = jsonBytes</span>
+        }
+
+        // set the content type &amp; status
+        <span class="cov8" title="1">w.Header().Set("Content-Type", "application/json")
+        w.WriteHeader(status)
+
+        // write the json out
+        _, err := w.Write(out)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (app *application) errorJSON(w http.ResponseWriter, err error, status ...int) <span class="cov8" title="1">{
+        statusCode := http.StatusBadRequest
+        if len(status) &gt; 0 </span><span class="cov8" title="1">{
+                statusCode = status[0]
+        }</span>
+
+        <span class="cov8" title="1">type jsonError struct {
+                Message string `json:"message"`
+        }
+
+        theError := jsonError{
+                Message: err.Error(),
+        }
+
+        _ = app.writeJSON(w, statusCode, theError, "error")</span>
+}
+
+func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data interface{}) error <span class="cov8" title="1">{
+        maxBytes := 1024 * 1024 // one megabyte
+        r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+        dec := json.NewDecoder(r.Body)
+        dec.DisallowUnknownFields()
+
+        // attempt to decode the data
+        err := dec.Decode(data)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        // make sure only one JSON value in payload
+        <span class="cov8" title="1">err = dec.Decode(&amp;struct{}{})
+        if err != io.EOF </span><span class="cov0" title="0">{
+                return errors.New("body must only contain a single JSON value")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package main
+
+import (
+        "database/sql"
+        "log"
+
+        _ "github.com/jackc/pgconn"
+        _ "github.com/jackc/pgx/v4"
+        _ "github.com/jackc/pgx/v4/stdlib"
+)
+
+func openDB(dsn string) (*sql.DB, error) <span class="cov0" title="0">{
+        db, err := sql.Open("pgx", dsn)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">err = db.Ping()
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return db, nil</span>
+}
+
+func (app *application) connectToDB() (*sql.DB, error) <span class="cov0" title="0">{
+        connection, err := openDB(app.DSN)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">log.Println("Connected to database")
+        return connection, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package main
 
 import (
         "net/url"
@@ -181,7 +569,7 @@ func (f *Form) Valid() bool <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package main
+		<pre class="file" id="file8" style="display: none">package main
 
 import (
         "fmt"
@@ -375,7 +763,7 @@ func (app *application) UploadFiles(r *http.Request, uploadDir string) ([]*Uploa
 }
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package main
+		<pre class="file" id="file9" style="display: none">package main
 
 import (
         "encoding/gob"
@@ -424,7 +812,7 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package main
+		<pre class="file" id="file10" style="display: none">package main
 
 import (
         "context"
@@ -490,7 +878,7 @@ func (app *application) auth(next http.Handler) http.Handler <span class="cov8" 
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package main
+		<pre class="file" id="file11" style="display: none">package main
 
 import (
         "net/http"
@@ -522,7 +910,7 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package main
+		<pre class="file" id="file12" style="display: none">package main
 
 import (
         "net/http"
@@ -541,7 +929,7 @@ func getSession() *scs.SessionManager <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package data
+		<pre class="file" id="file13" style="display: none">package data
 
 import (
         "errors"
@@ -582,7 +970,7 @@ func (u *User) PasswordMatches(plainText string) (bool, error) <span class="cov8
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package datasource
+		<pre class="file" id="file14" style="display: none">package datasource
 
 import (
         "context"
@@ -839,7 +1227,7 @@ func (m *PostgresDB) InsertUserImage(i data.UserImage) (int, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package datasource
+		<pre class="file" id="file15" style="display: none">package datasource
 
 import (
         "database/sql"
