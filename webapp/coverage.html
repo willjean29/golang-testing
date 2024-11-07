@@ -65,7 +65,7 @@
 				
 				<option value="file4">webapp/cmd/api/main.go (0.0%)</option>
 				
-				<option value="file5">webapp/cmd/api/routes.go (0.0%)</option>
+				<option value="file5">webapp/cmd/api/routes.go (87.5%)</option>
 				
 				<option value="file6">webapp/cmd/api/utils.go (88.6%)</option>
 				
@@ -396,7 +396,7 @@ import (
         "github.com/go-chi/chi/v5/middleware"
 )
 
-func (app *application) routes() http.Handler <span class="cov0" title="0">{
+func (app *application) routes() http.Handler <span class="cov8" title="1">{
         router := chi.NewRouter()
 
         router.Use(middleware.Recoverer)
@@ -415,7 +415,7 @@ func (app *application) routes() http.Handler <span class="cov0" title="0">{
         }</span>)
 
         // Protected routes
-        <span class="cov0" title="0">router.Route("/users", func(r chi.Router) </span><span class="cov0" title="0">{
+        <span class="cov8" title="1">router.Route("/users", func(r chi.Router) </span><span class="cov8" title="1">{
                 r.Use(app.authRequired)
                 r.Get("/", app.allUsers)
                 r.Get("/{userId}", app.getUser)
@@ -424,7 +424,7 @@ func (app *application) routes() http.Handler <span class="cov0" title="0">{
                 r.Post("/", app.insertUser)
         }</span>)
 
-        <span class="cov0" title="0">return router</span>
+        <span class="cov8" title="1">return router</span>
 }
 </pre>
 		
