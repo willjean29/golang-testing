@@ -11,6 +11,7 @@ func (app *application) routes() http.Handler {
 	router := chi.NewRouter()
 
 	router.Use(middleware.Recoverer)
+	router.Use(app.enableCORS)
 
 	router.Post("/auth", app.authenticate)
 	router.Post("/refresh-token", app.refresh)
@@ -26,6 +27,7 @@ func (app *application) routes() http.Handler {
 
 	// Protected routes
 	router.Route("/users", func(r chi.Router) {
+		r.Use(app.authRequired)
 		r.Get("/", app.allUsers)
 		r.Get("/{userId}", app.getUser)
 		r.Put("/{userId}", app.updateUser)
