@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">webapp/cmd/api/api-handlers.go (88.9%)</option>
+				<option value="file0">webapp/cmd/api/api-handlers.go (78.3%)</option>
 				
 				<option value="file1">webapp/cmd/api/api_middleware.go (100.0%)</option>
 				
@@ -108,7 +108,10 @@
 import (
         "errors"
         "net/http"
+        "strconv"
+        "time"
 
+        "github.com/golang-jwt/jwt/v5"
         "golang.org/x/crypto/bcrypt"
 )
 
@@ -148,9 +151,63 @@ func (app *application) authenticate(w http.ResponseWriter, r *http.Request) <sp
         <span class="cov8" title="1">_ = app.writeJSON(w, http.StatusOK, tokenPairs)</span>
 }
 
-func (app *application) refresh(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
-        // Refresh user
-}</span>
+func (app *application) refresh(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        err := r.ParseForm()
+        if err != nil </span><span class="cov0" title="0">{
+                w.WriteHeader(http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">refreshToken := r.Form.Get("refresh_token")
+        claims := &amp;Clams{}
+
+        _, err = jwt.ParseWithClaims(refreshToken, claims, func(token *jwt.Token) (interface{}, error) </span><span class="cov8" title="1">{
+                return []byte(app.JWTSecret), nil
+        }</span>)
+
+        <span class="cov8" title="1">if err != nil </span><span class="cov8" title="1">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">if time.Unix(claims.ExpiresAt.Unix(), 0).Sub(time.Now()) &gt; 30*time.Second </span><span class="cov8" title="1">{
+                app.errorJSON(w, errors.New("refresh token does not need renewed yet"), http.StatusTooEarly)
+                return
+        }</span>
+
+        // get the user id from the claims
+        <span class="cov8" title="1">userID, err := strconv.Atoi(claims.Subject)
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">user, err := app.DB.GetUser(userID)
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, errors.New("unknown user"), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">tokenPairs, err := app.generateTokenPair(user)
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">http.SetCookie(w, &amp;http.Cookie{
+                Name:     "__Host-refresh_token",
+                Path:     "/",
+                Value:    tokenPairs.RefreshToken,
+                Expires:  time.Now().Add(jwtRefreshTokenExpiry),
+                MaxAge:   int(jwtRefreshTokenExpiry.Seconds()),
+                SameSite: http.SameSiteStrictMode,
+                Domain:   "localhost",
+                HttpOnly: true,
+                Secure:   true,
+        })
+
+        _ = app.writeJSON(w, http.StatusOK, tokenPairs)</span>
+}
 
 func (app *application) allUsers(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
         // All users
@@ -216,8 +273,8 @@ import (
         "github.com/golang-jwt/jwt/v5"
 )
 
-const jwtTokenExpiry = time.Minute * 15
-const jwtRefreshTokenExpiry = time.Hour * 24
+var jwtTokenExpiry = time.Minute * 15
+var jwtRefreshTokenExpiry = time.Hour * 24
 
 type TokenPairs struct {
         Token        string `json:"access_token"`
