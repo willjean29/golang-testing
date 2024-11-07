@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -8,6 +9,8 @@ import (
 	"testing"
 	"time"
 	"webapp/pkg/data"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func Test_app_authenticate(t *testing.T) {
@@ -111,4 +114,70 @@ func Test_app_refresh(t *testing.T) {
 		})
 	}
 
+}
+
+func Test_app_userHandlers(t *testing.T) {
+	tests := []struct {
+		name         string
+		method       string
+		json         string
+		paramId      string
+		handler      http.HandlerFunc
+		expectedCode int
+	}{
+		{
+			name:         "Get all users",
+			method:       "GET",
+			json:         "",
+			paramId:      "",
+			handler:      app.allUsers,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Get user by ID",
+			method:       "GET",
+			json:         "",
+			paramId:      "1",
+			handler:      app.getUser,
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "Get user by ID invalid",
+			method:       "GET",
+			json:         "",
+			paramId:      "100",
+			handler:      app.getUser,
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "Delete user by ID",
+			method:       "DELETE",
+			json:         "",
+			paramId:      "1",
+			handler:      app.deleteUser,
+			expectedCode: http.StatusNoContent,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var req *http.Request
+			res := httptest.NewRecorder()
+			if tt.json != "" {
+				req = httptest.NewRequest(tt.method, "/users", strings.NewReader(tt.json))
+			} else {
+				req = httptest.NewRequest(tt.method, "/users", nil)
+			}
+			if tt.paramId != "" {
+				chiCtx := chi.NewRouteContext()
+				chiCtx.URLParams.Add("userId", tt.paramId)
+				req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, chiCtx))
+			}
+			tt.handler(res, req)
+
+			if res.Code != tt.expectedCode {
+				t.Errorf("Expected status code %d, but got %d", tt.expectedCode, res.Code)
+			}
+		})
+	}
 }

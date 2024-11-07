@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">webapp/cmd/api/api-handlers.go (78.3%)</option>
+				<option value="file0">webapp/cmd/api/api-handlers.go (57.3%)</option>
 				
 				<option value="file1">webapp/cmd/api/api_middleware.go (100.0%)</option>
 				
@@ -110,7 +110,9 @@ import (
         "net/http"
         "strconv"
         "time"
+        "webapp/pkg/data"
 
+        "github.com/go-chi/chi/v5"
         "github.com/golang-jwt/jwt/v5"
         "golang.org/x/crypto/bcrypt"
 )
@@ -209,25 +211,83 @@ func (app *application) refresh(w http.ResponseWriter, r *http.Request) <span cl
         _ = app.writeJSON(w, http.StatusOK, tokenPairs)</span>
 }
 
-func (app *application) allUsers(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
-        // All users
-}</span>
+func (app *application) allUsers(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        users, err := app.DB.AllUsers()
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
 
-func (app *application) getUser(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
-        // Get user
-}</span>
+        <span class="cov8" title="1">_ = app.writeJSON(w, http.StatusOK, users)</span>
+}
 
-func (app *application) updateUser(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
-        // Update user
-}</span>
+func (app *application) getUser(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        userId, err := strconv.Atoi(chi.URLParam(r, "userId"))
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, errors.New("invalid user id"), http.StatusBadRequest)
+                return
+        }</span>
 
-func (app *application) deleteUser(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
-        // Delete user
-}</span>
+        <span class="cov8" title="1">user, err := app.DB.GetUser(userId)
+        if err != nil </span><span class="cov8" title="1">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
 
-func (app *application) insertUser(w http.ResponseWriter, r *http.Request) {<span class="cov0" title="0">
-        // Insert user
-}</span>
+        <span class="cov8" title="1">_ = app.writeJSON(w, http.StatusOK, user)</span>
+}
+
+func (app *application) updateUser(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        var user data.User
+        err := app.readJSON(w, r, &amp;user)
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">err = app.DB.UpdateUser(user)
+
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">w.WriteHeader(http.StatusOK)</span>
+}
+
+func (app *application) deleteUser(w http.ResponseWriter, r *http.Request) <span class="cov8" title="1">{
+        userId, err := strconv.Atoi(chi.URLParam(r, "userId"))
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, errors.New("invalid user id"), http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">err = app.DB.DeleteUser(userId)
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov8" title="1">w.WriteHeader(http.StatusNoContent)</span>
+}
+
+func (app *application) insertUser(w http.ResponseWriter, r *http.Request) <span class="cov0" title="0">{
+        var user data.User
+        err := app.readJSON(w, r, &amp;user)
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">_, err = app.DB.InsertUser(user)
+
+        if err != nil </span><span class="cov0" title="0">{
+                app.errorJSON(w, err, http.StatusBadRequest)
+                return
+        }</span>
+
+        <span class="cov0" title="0">w.WriteHeader(http.StatusCreated)</span>
+}
 </pre>
 		
 		<pre class="file" id="file1" style="display: none">package main
