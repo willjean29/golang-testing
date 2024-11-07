@@ -57,7 +57,7 @@
 				
 				<option value="file0">webapp/cmd/api/api-handlers.go (88.9%)</option>
 				
-				<option value="file1">webapp/cmd/api/api_middleware.go (57.1%)</option>
+				<option value="file1">webapp/cmd/api/api_middleware.go (100.0%)</option>
 				
 				<option value="file2">webapp/cmd/api/auth.go (90.9%)</option>
 				
@@ -191,14 +191,14 @@ func (app *application) enableCORS(next http.Handler) http.Handler <span class="
         })
 }
 
-func (app *application) authRequired(next http.Handler) http.Handler <span class="cov0" title="0">{
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+func (app *application) authRequired(next http.Handler) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
                 _, _, err := app.getTokenFromHeaderAndVerify(w, r)
-                if err != nil </span><span class="cov0" title="0">{
+                if err != nil </span><span class="cov8" title="1">{
                         w.WriteHeader(http.StatusUnauthorized)
                         return
                 }</span>
-                <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+                <span class="cov8" title="1">next.ServeHTTP(w, r)</span>
         })
 }
 </pre>
