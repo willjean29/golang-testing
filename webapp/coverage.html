@@ -57,37 +57,39 @@
 				
 				<option value="file0">webapp/cmd/api/api-handlers.go (88.9%)</option>
 				
-				<option value="file1">webapp/cmd/api/auth.go (90.9%)</option>
+				<option value="file1">webapp/cmd/api/api_middleware.go (57.1%)</option>
 				
-				<option value="file2">webapp/cmd/api/db.go (0.0%)</option>
+				<option value="file2">webapp/cmd/api/auth.go (90.9%)</option>
 				
-				<option value="file3">webapp/cmd/api/main.go (0.0%)</option>
+				<option value="file3">webapp/cmd/api/db.go (0.0%)</option>
 				
-				<option value="file4">webapp/cmd/api/routes.go (0.0%)</option>
+				<option value="file4">webapp/cmd/api/main.go (0.0%)</option>
 				
-				<option value="file5">webapp/cmd/api/utils.go (88.6%)</option>
+				<option value="file5">webapp/cmd/api/routes.go (0.0%)</option>
 				
-				<option value="file6">webapp/cmd/cli/main.go (0.0%)</option>
+				<option value="file6">webapp/cmd/api/utils.go (88.6%)</option>
 				
-				<option value="file7">webapp/cmd/web/db.go (0.0%)</option>
+				<option value="file7">webapp/cmd/cli/main.go (0.0%)</option>
 				
-				<option value="file8">webapp/cmd/web/forms.go (100.0%)</option>
+				<option value="file8">webapp/cmd/web/db.go (0.0%)</option>
 				
-				<option value="file9">webapp/cmd/web/handlers.go (85.7%)</option>
+				<option value="file9">webapp/cmd/web/forms.go (100.0%)</option>
 				
-				<option value="file10">webapp/cmd/web/main.go (0.0%)</option>
+				<option value="file10">webapp/cmd/web/handlers.go (85.7%)</option>
 				
-				<option value="file11">webapp/cmd/web/middlewares.go (100.0%)</option>
+				<option value="file11">webapp/cmd/web/main.go (0.0%)</option>
 				
-				<option value="file12">webapp/cmd/web/routes.go (100.0%)</option>
+				<option value="file12">webapp/cmd/web/middlewares.go (100.0%)</option>
 				
-				<option value="file13">webapp/cmd/web/sessions.go (100.0%)</option>
+				<option value="file13">webapp/cmd/web/routes.go (100.0%)</option>
 				
-				<option value="file14">webapp/pkg/data/users.go (83.3%)</option>
+				<option value="file14">webapp/cmd/web/sessions.go (100.0%)</option>
 				
-				<option value="file15">webapp/pkg/repository/datasource/users_postgres.go (86.2%)</option>
+				<option value="file15">webapp/pkg/data/users.go (83.3%)</option>
 				
-				<option value="file16">webapp/pkg/repository/datasource/users_testdb.go (0.0%)</option>
+				<option value="file16">webapp/pkg/repository/datasource/users_postgres.go (86.2%)</option>
+				
+				<option value="file17">webapp/pkg/repository/datasource/users_testdb.go (0.0%)</option>
 				
 				</select>
 			</div>
@@ -172,6 +174,36 @@ func (app *application) insertUser(w http.ResponseWriter, r *http.Request) {<spa
 </pre>
 		
 		<pre class="file" id="file1" style="display: none">package main
+
+import "net/http"
+
+func (app *application) enableCORS(next http.Handler) http.Handler <span class="cov8" title="1">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                w.Header().Set("Access-Control-Allow-Origin", "http://localhost:8080")
+                if r.Method == "OPTIONS" </span><span class="cov8" title="1">{
+                        w.Header().Set("Access-Control-Allow-Credentials", "true")
+                        w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT,PATH, DELETE, OPTIONS")
+                        w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, X-CSRF-Token, Authorization")
+                        return
+                }</span> else<span class="cov8" title="1"> {
+                        next.ServeHTTP(w, r)
+                }</span>
+        })
+}
+
+func (app *application) authRequired(next http.Handler) http.Handler <span class="cov0" title="0">{
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov0" title="0">{
+                _, _, err := app.getTokenFromHeaderAndVerify(w, r)
+                if err != nil </span><span class="cov0" title="0">{
+                        w.WriteHeader(http.StatusUnauthorized)
+                        return
+                }</span>
+                <span class="cov0" title="0">next.ServeHTTP(w, r)</span>
+        })
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package main
 
 import (
         "errors"
@@ -279,7 +311,7 @@ func (app *application) generateTokenPair(user *data.User) (TokenPairs, error) <
 }
 </pre>
 		
-		<pre class="file" id="file2" style="display: none">package main
+		<pre class="file" id="file3" style="display: none">package main
 
 import (
         "database/sql"
@@ -312,7 +344,7 @@ func (app *application) connectToDB() (*sql.DB, error) <span class="cov0" title=
 }
 </pre>
 		
-		<pre class="file" id="file3" style="display: none">package main
+		<pre class="file" id="file4" style="display: none">package main
 
 import (
         "flag"
@@ -355,7 +387,7 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file4" style="display: none">package main
+		<pre class="file" id="file5" style="display: none">package main
 
 import (
         "net/http"
@@ -394,7 +426,7 @@ func (app *application) routes() http.Handler <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file5" style="display: none">package main
+		<pre class="file" id="file6" style="display: none">package main
 
 import (
         "encoding/json"
@@ -477,7 +509,7 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, data in
 }
 </pre>
 		
-		<pre class="file" id="file6" style="display: none">package main
+		<pre class="file" id="file7" style="display: none">package main
 
 import (
         "flag"
@@ -538,7 +570,7 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file7" style="display: none">package main
+		<pre class="file" id="file8" style="display: none">package main
 
 import (
         "database/sql"
@@ -571,7 +603,7 @@ func (app *application) connectToDB() (*sql.DB, error) <span class="cov0" title=
 }
 </pre>
 		
-		<pre class="file" id="file8" style="display: none">package main
+		<pre class="file" id="file9" style="display: none">package main
 
 import (
         "net/url"
@@ -632,7 +664,7 @@ func (f *Form) Valid() bool <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file9" style="display: none">package main
+		<pre class="file" id="file10" style="display: none">package main
 
 import (
         "fmt"
@@ -826,7 +858,7 @@ func (app *application) UploadFiles(r *http.Request, uploadDir string) ([]*Uploa
 }
 </pre>
 		
-		<pre class="file" id="file10" style="display: none">package main
+		<pre class="file" id="file11" style="display: none">package main
 
 import (
         "encoding/gob"
@@ -875,7 +907,7 @@ func main() <span class="cov0" title="0">{
 }
 </pre>
 		
-		<pre class="file" id="file11" style="display: none">package main
+		<pre class="file" id="file12" style="display: none">package main
 
 import (
         "context"
@@ -941,7 +973,7 @@ func (app *application) auth(next http.Handler) http.Handler <span class="cov8" 
 }
 </pre>
 		
-		<pre class="file" id="file12" style="display: none">package main
+		<pre class="file" id="file13" style="display: none">package main
 
 import (
         "net/http"
@@ -973,7 +1005,7 @@ func (app *application) routes() http.Handler <span class="cov8" title="1">{
 }
 </pre>
 		
-		<pre class="file" id="file13" style="display: none">package main
+		<pre class="file" id="file14" style="display: none">package main
 
 import (
         "net/http"
@@ -992,7 +1024,7 @@ func getSession() *scs.SessionManager <span class="cov8" title="1">{
 }</span>
 </pre>
 		
-		<pre class="file" id="file14" style="display: none">package data
+		<pre class="file" id="file15" style="display: none">package data
 
 import (
         "errors"
@@ -1033,7 +1065,7 @@ func (u *User) PasswordMatches(plainText string) (bool, error) <span class="cov8
 }
 </pre>
 		
-		<pre class="file" id="file15" style="display: none">package datasource
+		<pre class="file" id="file16" style="display: none">package datasource
 
 import (
         "context"
@@ -1290,7 +1322,7 @@ func (m *PostgresDB) InsertUserImage(i data.UserImage) (int, error) <span class=
 }
 </pre>
 		
-		<pre class="file" id="file16" style="display: none">package datasource
+		<pre class="file" id="file17" style="display: none">package datasource
 
 import (
         "database/sql"

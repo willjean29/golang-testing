@@ -28,6 +28,14 @@ webapp/cmd/api/api-handlers.go:54.74,56.2 0 0
 webapp/cmd/api/api-handlers.go:58.77,60.2 0 0
 webapp/cmd/api/api-handlers.go:62.77,64.2 0 0
 webapp/cmd/api/api-handlers.go:66.77,68.2 0 0
+webapp/cmd/api/api_middleware.go:5.68,6.71 1 1
+webapp/cmd/api/api_middleware.go:6.71,8.28 2 1
+webapp/cmd/api/api_middleware.go:8.28,13.4 4 1
+webapp/cmd/api/api_middleware.go:13.9,15.4 1 1
+webapp/cmd/api/api_middleware.go:19.70,20.71 1 0
+webapp/cmd/api/api_middleware.go:20.71,22.17 2 0
+webapp/cmd/api/api_middleware.go:22.17,25.4 2 0
+webapp/cmd/api/api_middleware.go:26.3,26.23 1 0
 webapp/cmd/api/auth.go:27.117,32.22 3 1
 webapp/cmd/api/auth.go:32.22,34.3 1 1
 webapp/cmd/api/auth.go:36.2,37.28 2 1
